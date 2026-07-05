@@ -2,7 +2,7 @@
     "output": {
         "blocklist": [],
         "convolver#0": {
-            "autogain": true,
+            "autogain": false,
             "bypass": false,
             "dry": -100,
             "input-gain": 0,
@@ -69,7 +69,7 @@
             },
             "mode": "IIR",
             "num-bands": 4,
-            "output-gain": 0.0,
+            "output-gain": -3.0,
             "pitch-left": 0.0,
             "pitch-right": 0.0,
             "right": {

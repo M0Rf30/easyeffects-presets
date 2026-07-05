@@ -55,7 +55,7 @@
             "mode": "IIR",
             "output-gain": 0.0,
             "std": "ISO226-2023",
-            "volume": -20.0
+            "volume": -14.0
         },
         "plugins_order": [
             "filter#0",

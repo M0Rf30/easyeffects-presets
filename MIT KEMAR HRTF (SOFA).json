@@ -1,0 +1,51 @@
+{
+    "output": {
+        "blocklist": [],
+        "convolver#0": {
+            "autogain": false,
+            "bypass": false,
+            "dry": -100.0,
+            "input-gain": 0.0,
+            "ir-width": 100,
+            "kernel-name": "MIT KEMAR HRTF (Normal Pinna)",
+            "output-gain": 0.0,
+            "sofa": {
+                "azimuth": 0.0,
+                "elevation": 0.0,
+                "radius": 1.4
+            },
+            "wet": 0.0
+        },
+        "limiter#0": {
+            "alr": false,
+            "alr-attack": 5.0,
+            "alr-knee": 0.0,
+            "alr-knee-smooth": -5.0,
+            "alr-release": 50.0,
+            "attack": 5.0,
+            "bypass": false,
+            "dithering": "None",
+            "gain-boost": true,
+            "input-gain": 0.0,
+            "input-to-link": 0.0,
+            "input-to-sidechain": 0.0,
+            "link-to-input": 0.0,
+            "link-to-sidechain": 0.0,
+            "lookahead": 5.0,
+            "mode": "Herm Thin",
+            "output-gain": 0.0,
+            "oversampling": "None",
+            "release": 5.0,
+            "sidechain-preamp": 0.0,
+            "sidechain-to-input": 0.0,
+            "sidechain-to-link": 0.0,
+            "sidechain-type": "Internal",
+            "stereo-link": 100.0,
+            "threshold": 0.0
+        },
+        "plugins_order": [
+            "convolver#0",
+            "limiter#0"
+        ]
+    }
+}

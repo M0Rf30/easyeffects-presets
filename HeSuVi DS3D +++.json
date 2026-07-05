@@ -1,0 +1,51 @@
+{
+    "output": {
+        "blocklist": [],
+        "convolver#0": {
+            "autogain": true,
+            "bypass": false,
+            "dry": -100,
+            "input-gain": 0,
+            "ir-width": 100,
+            "kernel-name": "HeSuVi DS3D +++ (True Stereo, 48kHz)",
+            "output-gain": 0,
+            "sofa": {
+                "azimuth": 0,
+                "elevation": 0,
+                "radius": 1
+            },
+            "wet": 0
+        },
+        "limiter#0": {
+            "alr": false,
+            "alr-attack": 5,
+            "alr-knee": 0,
+            "alr-knee-smooth": -5,
+            "alr-release": 50,
+            "attack": 5,
+            "bypass": false,
+            "dithering": "None",
+            "gain-boost": true,
+            "input-gain": 0,
+            "input-to-link": 0,
+            "input-to-sidechain": 0,
+            "link-to-input": 0,
+            "link-to-sidechain": 0,
+            "lookahead": 5,
+            "mode": "Herm Thin",
+            "output-gain": 0,
+            "oversampling": "None",
+            "release": 5,
+            "sidechain-preamp": 0,
+            "sidechain-to-input": 0,
+            "sidechain-to-link": 0,
+            "sidechain-type": "Internal",
+            "stereo-link": 100,
+            "threshold": 0
+        },
+        "plugins_order": [
+            "convolver#0",
+            "limiter#0"
+        ]
+    }
+}

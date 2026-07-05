@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="addon">
+  <id>io.github.wwmm.easyeffects.Presets.M0Rf30</id>
+  <extends>com.github.wwmm.easyeffects</extends>
+  <name>M0Rf30 Easy Effects Presets</name>
+  <developer id="io.github.m0rf30">
+    <name>M0Rf30</name>
+  </developer>
+  <summary>A varied collection of presets to configure Easy Effects</summary>
+  <url type="homepage">https://github.com/M0Rf30/easyeffects-presets</url>
+  <url type="vcs-browser">https://github.com/M0Rf30/easyeffects-presets</url>
+  <url type="help">https://github.com/M0Rf30/easyeffects-presets</url>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <releases>
+    <release version="2026.07.04" date="2026-07-04"/>
+  </releases>
+</component>

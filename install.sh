@@ -30,10 +30,10 @@ read_choice() {
         if [ -z "$CHOICE" ]; then
             CHOICE=1 #default
         fi
-        if [[ $CHOICE =~ ^([1-9]|1[01])$ ]]; then
+        if [[ $CHOICE =~ ^([1-9]|1[0-2])$ ]]; then
             break
         fi
-        echo "Invalid option! Please input a value between 1 and 11!"
+        echo "Invalid option! Please input a value between 1 and 12!"
     done
 }
 
@@ -50,6 +50,7 @@ install_menu() {
     echo "9) Install Cupertino Laptop Speakers preset"
     echo "10) Install IRCAM LISTEN HRTF (Subject 1002) preset"
     echo "11) Install all Utility & Effects presets (Night Listening, Levelizer, Mono Sum, Tiny Speaker Rescue, Analog Warmth, Concert Hall, Movie Dialogue Boost)"
+    echo "12) Install Synthetic Binaural Room preset"
 }
 
 install_presets() {
@@ -58,6 +59,9 @@ install_presets() {
         echo "Installing Synthetic Spherical Crossfeed preset..."
         curl --fail "$GIT_REPOSITORY/Synthetic%20Spherical%20Crossfeed.json" --output "$PRESETS_DIRECTORY/output/Synthetic Spherical Crossfeed.json" --silent
         curl --fail "$GIT_REPOSITORY/irs/Synthetic%20Spherical-Head%20Crossfeed%20(48kHz).irs" --output "$PRESETS_DIRECTORY/irs/Synthetic Spherical-Head Crossfeed (48kHz).irs" --silent
+        echo "Installing Synthetic Binaural Room preset..."
+        curl --fail "$GIT_REPOSITORY/Synthetic%20Binaural%20Room.json" --output "$PRESETS_DIRECTORY/output/Synthetic Binaural Room.json" --silent
+        curl --fail "$GIT_REPOSITORY/irs/Synthetic%20Binaural%20Room%20(Structural%20HRTF%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/Synthetic Binaural Room (Structural HRTF, 48kHz).irs" --silent
         echo "Installing HeSuVi Atmos preset..."
         curl --fail "$GIT_REPOSITORY/HeSuVi%20Atmos.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Atmos.json" --silent
         curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Atmos%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Atmos (True Stereo, 48kHz).irs" --silent
@@ -372,6 +376,12 @@ install_presets() {
         curl --fail "$GIT_REPOSITORY/Analog%20Warmth.json" --output "$PRESETS_DIRECTORY/output/Analog Warmth.json" --silent
         curl --fail "$GIT_REPOSITORY/Concert%20Hall.json" --output "$PRESETS_DIRECTORY/output/Concert Hall.json" --silent
         curl --fail "$GIT_REPOSITORY/Movie%20Dialogue%20Boost.json" --output "$PRESETS_DIRECTORY/output/Movie Dialogue Boost.json" --silent
+        ;;
+
+    12)
+        echo "Installing Synthetic Binaural Room preset..."
+        curl --fail "$GIT_REPOSITORY/Synthetic%20Binaural%20Room.json" --output "$PRESETS_DIRECTORY/output/Synthetic Binaural Room.json" --silent
+        curl --fail "$GIT_REPOSITORY/irs/Synthetic%20Binaural%20Room%20(Structural%20HRTF%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/Synthetic Binaural Room (Structural HRTF, 48kHz).irs" --silent
         ;;
 
     esac

@@ -11,8 +11,43 @@
   <url type="vcs-browser">https://github.com/M0Rf30/easyeffects-presets</url>
   <url type="help">https://github.com/M0Rf30/easyeffects-presets</url>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>MIT</project_license>
+  <project_license>MIT AND GPL-3.0-only AND CC-BY-SA-3.0 AND LicenseRef-proprietary</project_license>
+  <description>
+    <p>Presets for Easy Effects: output presets (68) and microphone presets (2), plus the impulse responses and HRTF datasets they use. Bundled assets have mixed licenses; see THIRD-PARTY-NOTICES.md in the repository.</p>
+    <p>Categories:</p>
+    <ul>
+      <li>Headphone virtualization with the Convolver (HeSuVi-derived, EFOtech MLV, synthetic crossfeed and binaural room, MIT KEMAR, ARI and IRCAM LISTEN HRTFs, FLORA)</li>
+      <li>Dynamics (GentleDynamics)</li>
+      <li>Laptop speakers and immersive listening</li>
+      <li>Utility and effects (night listening, loudness leveling, mono sum, reference transparency, and others)</li>
+      <li>Microphone noise suppression and voice broadcast</li>
+    </ul>
+  </description>
   <releases>
-    <release version="2026.07.04" date="2026-07-04"/>
+    <release version="1.1.3" date="2026-10-07">
+      <description>
+        <p>FLORA Cinema and Music use dedicated true-stereo kernels in a convolver and limiter chain; the full-marker variants are removed.</p>
+      </description>
+    </release>
+    <release version="1.1.2" date="2026-07-05">
+      <description>
+        <p>Adds Reference Transparency: 18 Hz high-pass, ISO 226:2023 loudness compensation, true-peak-safe limiter.</p>
+      </description>
+    </release>
+    <release version="1.1.1" date="2026-07-05">
+      <description>
+        <p>Disables autogain and fixes limiter output gain across the FLORA presets to prevent level drift.</p>
+      </description>
+    </release>
+    <release version="1.1.0" date="2026-07-05">
+      <description>
+        <p>Adds the FLORA preset pack built on two self-authored true-stereo kernels.</p>
+      </description>
+    </release>
+    <release version="1.0.0" date="2026-07-05">
+      <description>
+        <p>Initial tagged release: 67 presets and 55 impulse-response/HRTF kernels.</p>
+      </description>
+    </release>
   </releases>
 </component>

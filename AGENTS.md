@@ -10,7 +10,7 @@ A curated collection of preset configuration files for [wwmm/EasyEffects](https:
 root/*.json (preset)  --kernel-name-->  irs/<name>.irs | irs/<name>.sofa  (binary IR/HRTF asset)
        |
        v
-  install.sh  --curl(GIT_REPOSITORY + filename)-->  ~/.local/share/easyeffects/{output,irs}/
+  install.sh  --curl(<base URL>/<manifest path>)-->  ~/.local/share/easyeffects/{output,input,irs}/
                                                       (or the Flatpak-sandboxed equivalent)
        |
        v
@@ -20,38 +20,45 @@ root/*.json (preset)  --kernel-name-->  irs/<name>.irs | irs/<name>.sofa  (binar
 
 - A preset is a serialized EasyEffects pipeline: an ordered list of plugin instances (`equalizer#0`, `convolver#0`, `limiter#0`, …). Convolver-based presets don't embed audio — they reference a `kernel-name` that must resolve to a same-named file under `irs/`.
 - Two convolver kernel formats coexist: plain RIFF/WAVE `.irs` (mono/stereo/4-channel "true stereo") loaded directly, and AES69 `.sofa` (HDF5, full measured HRTF datasets) loaded via `libmysofa` with **zero conversion**.
-- Distribution is pull-based and unversioned: `install.sh` curls files straight from a live GitHub branch at install time — nothing is packaged/bundled ahead of time.
+- Distribution is pull-based: `install.sh` curls manifest files from raw.githubusercontent.com at a chosen ref (default `main`, or a tag via `--ref`); nothing is packaged ahead of time. Writes are atomic and failed downloads give a non-zero exit.
 - No preset is consumed anywhere except by the EasyEffects app itself; this repo has no runtime of its own.
 
 ## Key Directories
 
 | Path | Purpose |
 |---|---|
-| `/*.json` | ~49 preset files, one pipeline definition each. Root-level only — no subfolders. |
-| `irs/` | ~45 binary impulse-response/HRTF files (`.irs` WAVE, `.sofa` HDF5), each referenced by a preset via `kernel-name`. |
-| `scripts/` | `validate-presets.sh` (the entire QA suite) and `generate-synthetic-crossfeed.js` (the one programmatically-generated kernel). |
-| `.github/workflows/` | Single CI workflow, mirrors `scripts/validate-presets.sh`. |
-| `install.sh` | End-user installer (bash), root of repo. |
-| `io.github.wwmm.easyeffects.Presets.M0Rf30.metainfo.xml` | AppStream/Flatpak addon-discovery metadata (not consumed by install.sh or EasyEffects; Flatpak tooling only). |
+| `/*.json` | 68 output preset files, one pipeline definition each. Root-level only. |
+| `input/` | 2 microphone (`"input"` pipeline) presets: Voice Noise Suppression, Voice Broadcast. Installed to `<data>/input/`. |
+| `irs/` | 55 binary impulse-response/HRTF files (`.irs` WAVE, `.sofa` HDF5), each referenced by a preset via `kernel-name`. |
+| `scripts/` | `validate-presets.sh` (QA suite), `easyeffects-schema.json` + `update-schema.py` (vendored schema table), `generate-synthetic-crossfeed.js` and `generate-synthetic-binaural-room.js` (the two programmatically generated kernels). |
+| `.github/workflows/` | Single CI workflow with `lint`, `validate`, `generators` jobs. |
+| `install.sh` | End-user installer (bash) with an embedded manifest. |
+| `THIRD-PARTY-NOTICES.md` | Licenses and attribution for bundled third-party assets. |
+| `io.github.wwmm.easyeffects.Presets.M0Rf30.metainfo.xml` | AppStream/Flatpak addon metadata (not consumed by install.sh or EasyEffects). |
 
 ## Development Commands
 
 ```bash
-# The only "test" in this repo — run before every commit touching *.json or irs/
+# QA gate — run before every commit touching *.json, irs/, install.sh or README.md (python3 required)
 bash scripts/validate-presets.sh
 
-# Regenerate the one physically-modeled kernel (overwrites irs/ unconditionally)
+# Regenerate the synthetic kernels (overwrite irs/ unconditionally; output is deterministic)
 node scripts/generate-synthetic-crossfeed.js
+node scripts/generate-synthetic-binaural-room.js
 
-# Try the install flow end-to-end (menu-driven, defaults to option 1 on Enter)
+# Refresh the vendored EasyEffects schema table
+python3 scripts/update-schema.py
+
+# Installer: interactive menu, or non-interactive
 bash install.sh
+bash install.sh all | <n> | <group> | uninstall   # plus --ref <tag>, --flatpak, -y/--yes, -h
 ```
 
-There is no build step, no lint config, and no package manager anywhere in this repo (no `package.json`, no lockfile).
+There is no build step, no lint config, and no package manager (no `package.json`, no lockfile). CI additionally runs ShellCheck and `node --check` (see Testing & QA).
 
 ## Code Conventions & Common Patterns
 
-**JSON preset schema** (identical shape across all 49 files):
+**JSON preset schema** (identical shape across all 70 files):
 ```json
 {
     "output": {
@@ -61,10 +68,10 @@ There is no build step, no lint config, and no package manager anywhere in this 
     }
 }
 ```
-- Single top-level key is always `"output"` (no preset targets the microphone/`"input"` pipeline).
+- Single top-level key is `"output"` for root presets and `"input"` for `input/*.json` microphone presets (the validator checks it matches the directory). Same plugin/field schema otherwise.
 - `blocklist` is always `[]` — leave it that way.
-- Plugin instance keys are `"<snake_case_type>#<index>"` (e.g. `equalizer#0`, `convolver#0`); every preset in this repo only ever uses `#0` of a given type. `plugins_order` lists those same keys to define actual signal-chain order (object key order is not load-bearing).
-- **All object keys are strictly alphabetically sorted**, including `plugins_order` sorting after the plugin blocks it lists (verified with zero exceptions across all 49 files) — this is what EasyEffects itself produces on export, so match it in any hand edit.
+- Plugin instance keys are `"<snake_case_type>#<index>"` (e.g. `equalizer#0`, `convolver#0`). When a preset uses several instances of one type they are numbered `#0`, `#1`, … without gaps (e.g. two compressors → `compressor#0`, `compressor#1`). `plugins_order` lists the same keys to define signal-chain order (object key order is not load-bearing).
+- **All object keys are strictly alphabetically sorted** (`plugins_order` sorts after the plugin blocks) and the file must equal `json.dumps(indent=4, sort_keys=True, ensure_ascii=False)` plus a trailing newline — the validator enforces this byte-for-byte.
 - Fields are kebab-case (`input-gain`, `kernel-name`, `num-bands`, `stereo-link`, …), matching EasyEffects' GSettings schema 1:1 — these are literal serialized settings dumps, not a repo-invented format.
 - 4-space indent, trailing newline, one preset per file.
 - Numeric literal style (bare `0`/`-100` vs explicit `0.0`/`-100.0`) is inconsistent **by family**, not randomly — match whatever your preset's closest sibling already uses rather than mixing styles within a lineage.
@@ -76,34 +83,51 @@ There is no build step, no lint config, and no package manager anywhere in this 
 
 **True-stereo `.irs` channel order** (4-channel kernels): `L→L, L→R, R→L, R→R` (left/right source crossed into left/right ear) — this is the order EasyEffects' Convolver expects; get it backwards and crosstalk channels are silently swapped. See `scripts/generate-synthetic-crossfeed.js:124-137` for a worked, commented example cross-checked against upstream `convolver_kernel_manager.cpp`.
 
-**Adding or renaming a preset requires updating four places in the same commit** (nothing enforces this beyond code review + `validate-presets.sh`):
-1. The preset `.json` file (+ its `.irs`/`.sofa` in `irs/` if convolver-based).
-2. `install.sh`: a new numbered `install_menu()` option, `read_choice()`'s regex range, and the matching `case` branch's `curl --fail` lines (URL-encode spaces/parens/`+` in the URL, e.g. `Perfect%20EQ.json`).
-3. `README.md`: a numbered list entry (with provenance/citation) **and** an `Installation` table row.
-4. `scripts/validate-presets.sh` needs no changes — it discovers presets/kernels dynamically.
+**Adding or renaming a preset** (the validator enforces the last two items):
+1. The preset `.json` (+ its `.irs`/`.sofa` in `irs/` if convolver-based; root for output presets, `input/` for microphone presets).
+2. `install.sh` manifest (between `# BEGIN MANIFEST` and `# END MANIFEST`): one `group|path` line per file (paths literal, not URL-encoded; root `.json` → `output/`, `input/*` and `irs/*` keep their directory). A new menu entry additionally needs a `MENU_GROUPS`/`MENU_LABELS` pair (menu: 1 all, 2-14 output groups, 15 `input`, 16 `uninstall`).
+3. `README.md`: an entry with provenance/citation, containing the preset basename literally; update the Installation table and counts if a group changed.
+4. `THIRD-PARTY-NOTICES.md` if the asset is third-party; the README `Impulse Responses` inventory if a kernel was added.
+5. `scripts/validate-presets.sh` needs no changes — it discovers presets/kernels dynamically. Run it before committing.
+
+**Convolver level matching.** For every new convolver preset, set `output-gain` so the mono-input gain averaged over 200 Hz–4 kHz is about 0 dB, accounting for EasyEffects' autogain (it peak-normalises the kernel, then scales by min(1, 1/sqrt(max channel energy))); set the limiter threshold to −1 dB (not 0). Both synthetic generators normalise their kernels to 0 dB themselves. Trim leading silence from imported kernels.
+
+**Sidechain routing keys.** `-80.01` means off (the schema minimum). `0.0` is active unity routing, not "off". Use `-80.01` for unused dry/release-threshold style fields where the schema minimum is −80.01, not `-100`. Do not use the legacy external-sidechain fields. Limiter oversampling labels must be real enum values (e.g. `Full x8/24 bit`), and values must respect the kcfg min/max (the validator checks this).
 
 **Provenance/citation convention** (README): every preset entry states exactly where its data came from (upstream repo/paper links, measurement metadata like sample count/rate), and explicitly flags uncertainty where provenance can't be fully verified rather than asserting it. Match this tone for any new preset.
 
 ## Important Files
 
-- `install.sh` — end-user installer; `GIT_REPOSITORY` (line 4) hardcodes `raw.githubusercontent.com/M0Rf30/easyeffects-presets/main` — every curl call is relative to this, so a renamed/moved file (or a repo/branch rename, as already happened once) breaks every download silently until this stays in sync.
+- `install.sh` — end-user installer. The base URL defaults to `raw.githubusercontent.com/M0Rf30/easyeffects-presets/<ref>` (`--ref`/`EASYEFFECTS_PRESETS_REF`, default `main`; `EASYEFFECTS_PRESETS_BASE_URL` overrides); a repo rename or a renamed file breaks downloads. Files come from the manifest block, not from hard-coded `curl` lines.
 - `scripts/validate-presets.sh` — the repo's QA gate; read it before changing preset/`irs/` layout conventions.
 - `README.md` — canonical, human-facing documentation; keep the preset list, the "Impulse Responses" section, and the Installation table in sync with reality (it explicitly says to trust the live `install.sh` menu over itself if they drift).
-- `io.github.wwmm.easyeffects.Presets.M0Rf30.metainfo.xml` — rebranded to this repo's actual ownership (id, developer, and all three `<url>` fields point at `M0Rf30/easyeffects-presets`). `LICENSE`'s copyright line still names a third party (Matteo Iervasi, the 2018 original author of the preset collection this repo descended from) — historical attribution, not a bug, but don't assume it names the current maintainer.
+- `io.github.wwmm.easyeffects.Presets.M0Rf30.metainfo.xml` — AppStream addon metadata (id, developer, URLs, description, `<releases>`, SPDX `project_license`). Add a `<release>` per git tag and keep `project_license` consistent with `THIRD-PARTY-NOTICES.md`. Validate with `appstreamcli validate --pedantic`; the only accepted warning is the uppercase component id (`cid-contains-uppercase-letter`; the id must not change). `LICENSE`'s copyright line names Matteo Iervasi (2018 original author) — historical attribution, not a bug.
+- `THIRD-PARTY-NOTICES.md` — source, license, attribution and caveats per bundled asset group. Update it when adding or replacing any third-party preset or kernel.
 
 ## Runtime/Tooling Preferences
 
-- **`install.sh`**: bash (`#!/usr/bin/env bash`), requires `curl` on the end-user's machine.
-- **`scripts/generate-synthetic-crossfeed.js`**: explicitly Node.js (`#!/usr/bin/env node`), zero third-party dependencies (only `fs`/`path`). No Bun requirement, but also no repo convention favoring Node specifically for anything else — there simply is no other script.
-- **`scripts/validate-presets.sh`**: prefers `python3` (stdlib `json` module) for JSON parsing/kernel-name extraction, falls back to `jq` if `python3` is absent, exits 2 (hard environment failure) if neither is installed.
-- No package manager, no lockfile, no declared Node/Python version anywhere in the repo — don't add a `package.json` unless you're introducing an actual dependency.
+- **`install.sh`**: bash (`#!/usr/bin/env bash`), requires `curl` on the end-user's machine. Passes ShellCheck (CI enforces it).
+- **`scripts/generate-*.js`**: Node.js (`#!/usr/bin/env node`), zero third-party dependencies (only `fs`/`path`). Output must be deterministic (CI regenerates and diffs `irs/`).
+- **`scripts/validate-presets.sh`** and **`scripts/update-schema.py`**: require `python3` (stdlib only). There is no `jq` fallback; exit 2 if `python3` is missing.
+- No package manager, no lockfile, no declared Node/Python version — don't add a `package.json` unless you're introducing an actual dependency.
 
 ## Testing & QA
 
-`scripts/validate-presets.sh` is the **entire** test suite (no unit tests, no linter, no pre-commit hooks exist anywhere in this repo):
-- Validates every root-level `*.json` is parseable.
-- Resolves every `kernel-name` found anywhere in the JSON tree against `irs/<name>.irs` or `irs/<name>.sofa` — missing match is a **FAIL**.
-- Reports any `irs/`/`.sofa` file not referenced by a preset as a **WARNING** only (never fatal). The repo currently ships zero orphaned kernels — every IR is wired to a preset — so a clean run has no warnings; a new warning means you added a kernel without a preset (or removed the preset that used it).
-- Exit codes: `2` = environment/setup failure (no JSON tool, no preset files found); `1` = one or more FAILs; `0` = success (warnings alone never fail the run).
+`scripts/validate-presets.sh` is the test suite (no unit tests, no pre-commit hooks).
 
-CI (`.github/workflows/validate-presets.yml`) triggers on push/PR to **all branches**, no path filters, and just runs `bash scripts/validate-presets.sh` on `ubuntu-latest` — run the same command locally before opening a PR; it's byte-for-byte what CI checks.
+FAIL checks (exit 1), for root `*.json` (`"output"`) and `input/*.json` (`"input"`):
+- Parses as JSON, no duplicate keys, and is byte-identical to `json.dumps(obj, indent=4, sort_keys=True, ensure_ascii=False) + "\n"` (canonical serialization).
+- Exactly one top-level key matching the directory; `blocklist == []`; `plugins_order` has no duplicates and equals the set of `<type>#<n>` keys.
+- Every plugin value has the right JSON type, enum values are upstream labels, numbers are within the upstream min/max (table: `scripts/easyeffects-schema.json`).
+- Equalizer `num-bands` equals the number of `bandN` entries in left and right.
+- Every `kernel-name` resolves to `irs/<name>.irs` or `.sofa`; `.irs` is RIFF/WAVE with 1, 2 or 4 channels; `.sofa` has the HDF5 signature.
+- The `install.sh` manifest lists every preset and every `irs/` file, and every listed path exists.
+- `README.md` contains every preset basename (filename without `.json`) literally.
+
+WARN only: keys unknown to the upstream schema, `.irs` sample rate other than 48 kHz, orphaned `irs/` files. A clean run has none.
+
+Exit codes: `2` = environment problem (no `python3`, unreadable schema table, no presets); `1` = at least one FAIL; `0` = success.
+
+**Schema table.** `scripts/easyeffects-schema.json` is vendored from upstream `wwmm/easyeffects` (pinned commit `2bd13837` at the time of writing). Regenerate it with `python3 scripts/update-schema.py` when upgrading the targeted EasyEffects version, then re-run the validator.
+
+**CI** (`.github/workflows/validate-presets.yml`): runs on push to `main` and on pull requests, `contents: read` only, checkout pinned by SHA. Jobs: `lint` (ShellCheck on `install.sh` and `scripts/*.sh`, `node --check` on `scripts/*.js`), `validate` (`bash scripts/validate-presets.sh`), `generators` (regenerate both synthetic kernels, `git diff --exit-code -- irs/`).

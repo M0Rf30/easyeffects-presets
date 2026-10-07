@@ -25,17 +25,17 @@
         "convolver#0": {
             "autogain": false,
             "bypass": false,
-            "dry": -100.0,
-            "input-gain": 0.0,
+            "dry": -100,
+            "input-gain": 0,
             "ir-width": 100,
             "kernel-name": "LibreAtmos (Stereo, 48kHz)",
-            "output-gain": 0.0,
+            "output-gain": 0,
             "sofa": {
-                "azimuth": 0.0,
-                "elevation": 0.0,
-                "radius": 1.0
+                "azimuth": 0,
+                "elevation": 0,
+                "radius": 1
             },
-            "wet": 0.0
+            "wet": 0
         },
         "equalizer#0": {
             "balance": 0.0,

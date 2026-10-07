@@ -52,7 +52,7 @@ install_menu() {
     echo "11) Install all Utility & Effects presets (Night Listening, Levelizer, Mono Sum, Tiny Speaker Rescue, Analog Warmth, Concert Hall, Movie Dialogue Boost, Reference Transparency)"
     echo "12) Install Synthetic Binaural Room preset"
     echo "13) Install LibreAtmos preset"
-    echo "14) Install FLORA presets (Cinema/Music, standard + full marker)"
+    echo "14) Install FLORA presets (Cinema/Music)"
 }
 
 install_presets() {
@@ -221,16 +221,10 @@ install_presets() {
             curl --fail "$GIT_REPOSITORY/Reference%20Transparency.json" --output "$PRESETS_DIRECTORY/output/Reference Transparency.json" --silent
             echo "Installing FLORA Cinema preset..."
             curl --fail "$GIT_REPOSITORY/FLORA%20Cinema.json" --output "$PRESETS_DIRECTORY/output/FLORA Cinema.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Binaural%20(True%20Stereo%2C%20marker-stripped%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Binaural (True Stereo, marker-stripped, 48kHz).irs" --silent
-            echo "Installing FLORA Cinema (full marker) preset..."
-            curl --fail "$GIT_REPOSITORY/FLORA%20Cinema%20(full%20marker).json" --output "$PRESETS_DIRECTORY/output/FLORA Cinema (full marker).json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Binaural%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Binaural (True Stereo, 48kHz).irs" --silent
+            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Cinema%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Cinema (True Stereo, 48kHz).irs" --silent
             echo "Installing FLORA Music preset..."
             curl --fail "$GIT_REPOSITORY/FLORA%20Music.json" --output "$PRESETS_DIRECTORY/output/FLORA Music.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Binaural%20(True%20Stereo%2C%20marker-stripped%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Binaural (True Stereo, marker-stripped, 48kHz).irs" --silent
-            echo "Installing FLORA Music (full marker) preset..."
-            curl --fail "$GIT_REPOSITORY/FLORA%20Music%20(full%20marker).json" --output "$PRESETS_DIRECTORY/output/FLORA Music (full marker).json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Binaural%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Binaural (True Stereo, 48kHz).irs" --silent
+            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Music%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Music (True Stereo, 48kHz).irs" --silent
             ;;
         2)
             echo "Installing all HeSuVi virtualization presets..."
@@ -412,13 +406,9 @@ install_presets() {
         14)
             echo "Installing FLORA presets..."
             curl --fail "$GIT_REPOSITORY/FLORA%20Cinema.json" --output "$PRESETS_DIRECTORY/output/FLORA Cinema.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Binaural%20(True%20Stereo%2C%20marker-stripped%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Binaural (True Stereo, marker-stripped, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/FLORA%20Cinema%20(full%20marker).json" --output "$PRESETS_DIRECTORY/output/FLORA Cinema (full marker).json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Binaural%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Binaural (True Stereo, 48kHz).irs" --silent
+            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Cinema%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Cinema (True Stereo, 48kHz).irs" --silent
             curl --fail "$GIT_REPOSITORY/FLORA%20Music.json" --output "$PRESETS_DIRECTORY/output/FLORA Music.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Binaural%20(True%20Stereo%2C%20marker-stripped%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Binaural (True Stereo, marker-stripped, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/FLORA%20Music%20(full%20marker).json" --output "$PRESETS_DIRECTORY/output/FLORA Music (full marker).json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Binaural%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Binaural (True Stereo, 48kHz).irs" --silent
+            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Music%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Music (True Stereo, 48kHz).irs" --silent
             ;;
 
     esac

@@ -38,13 +38,13 @@ Original pure-DSP presets built entirely from EasyEffects' built-in plugins (no 
 - **MIT KEMAR HRTF (SOFA)** — the [MIT KEMAR](http://sound.media.mit.edu/resources/KEMAR.html) measured HRTF (Gardner & Martin, 1995), loaded as `.sofa` with no conversion.
 - **ARI HRTF (SOFA)** — a measured DTF HRTF of subject NH2 from the [Acoustics Research Institute](https://sofacoustics.org/data/database/ari/dtf_nh2.sofa) (CC BY-SA 3.0); a flatter alternative to MIT KEMAR.
 - **IRCAM LISTEN HRTF (Subject 1002)** — the [IRCAM LISTEN](http://recherche.ircam.fr/equipes/salles/listen/) measured HRTF (subject IRC_1002, free for research), delivered as a 4-channel true-stereo `.irs` derived from HeSuVi's `irc02` kernel (front L/R pair, head-symmetric). Unlike the SOFA presets it convolves a fixed frontal image (no live azimuth/elevation), but it loads directly without libmysofa.
-- **FLORA** (Free/Libre Object Reality Audio) — 4 presets (Cinema, Music, and a "full marker" variant of each) built on two custom, self-authored true-stereo HRIR kernels (not derived from any published dataset or measurement corpus). The "marker-stripped" kernel is the default; the "full marker" variant keeps embedded calibration markers in the impulse response. Cinema and Music each apply a distinct hand-tuned EQ curve on top of the shared convolver stage.
+- **FLORA** (Free/Libre Object Reality Audio) — 2 presets (Cinema, Music), each a convolver → limiter chain on its own custom, self-authored 4-channel true-stereo HRIR kernel (48 kHz, ~17.4k–18k samples; not derived from any published dataset or measurement corpus). The Cinema/Music voicing is baked into each kernel, so there is no separate EQ stage. Both use the generic, standard (non-personalized) HRTF profile.
 
 The SOFA presets convolve the whole mix as one virtual source — change azimuth/elevation live in the Convolver's SOFA controls.
 
 ## Impulse Responses
 
-`irs/` holds the convolution kernels (RIFF/WAVE `.irs` and AES69 `.sofa`) used by the Convolver-based presets — every kernel here is referenced by a preset. EasyEffects' Convolver only loads mono, 2-channel, or 4-channel "true stereo" (`L, LR, RL, R`) kernels, so raw multi-channel HeSuVi/HRIR files have to be adapted first — that's how the HeSuVi and EFOtech kernels here were built. They're HeSuVi/EFOtech-derived true-stereo IRs, the generated synthetic crossfeed, the two measured SOFA HRTFs, and LibreAtmos's short 2-channel coloration IR; each is trimmed of leading/trailing silence to cut Convolver CPU and latency.
+`irs/` holds the convolution kernels (RIFF/WAVE `.irs` and AES69 `.sofa`) used by the Convolver-based presets — every kernel here is referenced by a preset. EasyEffects' Convolver only loads mono, 2-channel, or 4-channel "true stereo" (`L, LR, RL, R`) kernels, so raw multi-channel HeSuVi/HRIR files have to be adapted first — that's how the HeSuVi and EFOtech kernels here were built. They're HeSuVi/EFOtech-derived true-stereo IRs, the generated synthetic crossfeed, the two measured SOFA HRTFs, the two FLORA true-stereo kernels, and LibreAtmos's short 2-channel coloration IR; each is trimmed of leading/trailing silence to cut Convolver CPU and latency.
 
 More community IRs to experiment with: [icy-comet/EasyEffects-presets-impulses](https://github.com/icy-comet/EasyEffects-presets-impulses).
 
@@ -71,7 +71,7 @@ Press Enter for the default. The on-screen menu is authoritative if this table d
 | 11 | Utility & Effects pack (8 presets) |
 | 12 | Synthetic Binaural Room |
 | 13 | LibreAtmos |
-| 14 | FLORA pack (4 presets) |
+| 14 | FLORA pack (2 presets) |
 
 `curl` is required (`sudo apt install curl` on Ubuntu).
 

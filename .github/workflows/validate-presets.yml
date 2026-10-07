@@ -2,19 +2,57 @@ name: Validate presets
 
 on:
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
-    branches: ["**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  validate:
+  lint:
+    name: Lint scripts
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - name: Sanity-check python3 availability
-        run: python3 --version
+      - name: ShellCheck
+        run: shellcheck install.sh scripts/*.sh
+
+      - name: Syntax-check JavaScript
+        run: |
+          for f in scripts/*.js; do
+            node --check "$f"
+          done
+
+  validate:
+    name: Validate presets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Run preset validation
         run: bash scripts/validate-presets.sh
+
+  generators:
+    name: Generator determinism
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Regenerate synthetic kernels
+        run: |
+          node scripts/generate-synthetic-crossfeed.js
+          node scripts/generate-synthetic-binaural-room.js
+
+      - name: Verify generated kernels are unchanged
+        run: git diff --exit-code -- irs/

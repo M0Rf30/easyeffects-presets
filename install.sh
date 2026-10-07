@@ -1,422 +1,522 @@
 #!/usr/bin/env bash
-# This script automatically detect the EasyEffects presets directory and installs the presets
+# Installs (or uninstalls) the M0Rf30 EasyEffects presets.
+#
+# It detects the EasyEffects data directory (native or Flatpak), downloads the
+# presets and impulse responses listed in the manifest below and removes them
+# again on request.  Run with --help for the non-interactive usage.
 
-GIT_REPOSITORY="https://raw.githubusercontent.com/M0Rf30/easyeffects-presets/main"
+set -u
+set -o pipefail
+
+REPO_SLUG="M0Rf30/easyeffects-presets"
+FLATPAK_ID="com.github.wwmm.easyeffects"
+
+REF="${EASYEFFECTS_PRESETS_REF:-main}"
+BASE_URL="${EASYEFFECTS_PRESETS_BASE_URL:-}"
+
+# Manifest: <group>|<repo-relative path>. Paths are literal (not URL-encoded).
+# Root *.json are output presets, input/*.json are microphone presets and
+# irs/* are impulse responses / HRTF datasets.
+manifest() {
+    cat <<'MANIFEST_EOF'
+# BEGIN MANIFEST
+hesuvi|HeSuVi Atmos.json
+hesuvi|irs/HeSuVi Atmos (True Stereo, 48kHz).irs
+hesuvi|HeSuVi DTS Headphone X.json
+hesuvi|irs/HeSuVi DTS Headphone X (True Stereo, 48kHz).irs
+hesuvi|HeSuVi GSX.json
+hesuvi|irs/HeSuVi GSX (True Stereo, 48kHz).irs
+hesuvi|HeSuVi CMSS-3D Entertainment.json
+hesuvi|irs/HeSuVi CMSS-3D Entertainment (True Stereo, 48kHz).irs
+hesuvi|HeSuVi CMSS-3D Game.json
+hesuvi|irs/HeSuVi CMSS-3D Game (True Stereo, 48kHz).irs
+hesuvi|HeSuVi CMSS-3D RX+.json
+hesuvi|irs/HeSuVi CMSS-3D RX+ (True Stereo, 48kHz).irs
+hesuvi|HeSuVi Dolby Headphone.json
+hesuvi|irs/HeSuVi Dolby Headphone (True Stereo, 48kHz).irs
+hesuvi|HeSuVi Dolby Home Theater.json
+hesuvi|irs/HeSuVi Dolby Home Theater (True Stereo, 48kHz).irs
+hesuvi|HeSuVi DS3D.json
+hesuvi|irs/HeSuVi DS3D (True Stereo, 48kHz).irs
+hesuvi|HeSuVi DVS.json
+hesuvi|irs/HeSuVi DVS (True Stereo, 48kHz).irs
+hesuvi|HeSuVi Nahimic.json
+hesuvi|irs/HeSuVi Nahimic (True Stereo, 48kHz).irs
+hesuvi|HeSuVi Windows Sonic.json
+hesuvi|irs/HeSuVi Windows Sonic (True Stereo, 48kHz).irs
+hesuvi|HeSuVi Out Of Your Head.json
+hesuvi|irs/HeSuVi Out Of Your Head (True Stereo, 48kHz).irs
+hesuvi|HeSuVi Waves.json
+hesuvi|irs/HeSuVi Waves (True Stereo, 48kHz).irs
+hesuvi|HeSuVi Sound Blaster SBX.json
+hesuvi|irs/HeSuVi Sound Blaster SBX (True Stereo, 48kHz).irs
+hesuvi|HeSuVi Dolby Headphone ++.json
+hesuvi|irs/HeSuVi Dolby Headphone ++ (True Stereo, 48kHz).irs
+hesuvi|HeSuVi DS3D ++.json
+hesuvi|irs/HeSuVi DS3D ++ (True Stereo, 48kHz).irs
+hesuvi|HeSuVi DS3D +++.json
+hesuvi|irs/HeSuVi DS3D +++ (True Stereo, 48kHz).irs
+hesuvi|HeSuVi GSX +.json
+hesuvi|irs/HeSuVi GSX + (True Stereo, 48kHz).irs
+hesuvi|HeSuVi GSX ++.json
+hesuvi|irs/HeSuVi GSX ++ (True Stereo, 48kHz).irs
+hesuvi|HeSuVi DVS +.json
+hesuvi|irs/HeSuVi DVS + (True Stereo, 48kHz).irs
+hesuvi|HeSuVi Sound Blaster SBX 33.json
+hesuvi|irs/HeSuVi Sound Blaster SBX 33 (True Stereo, 48kHz).irs
+hesuvi|HeSuVi Sound Blaster SBX 67.json
+hesuvi|irs/HeSuVi Sound Blaster SBX 67 (True Stereo, 48kHz).irs
+hesuvi|HeSuVi Windows Sonic +.json
+hesuvi|irs/HeSuVi Windows Sonic + (True Stereo, 48kHz).irs
+hesuvi|HeSuVi Out Of Your Head 2.json
+hesuvi|irs/HeSuVi Out Of Your Head 2 (True Stereo, 48kHz).irs
+hesuvi|HeSuVi SSC Dublin.json
+hesuvi|irs/HeSuVi SSC Dublin (True Stereo, 48kHz).irs
+hesuvi|HeSuVi SSC New York.json
+hesuvi|irs/HeSuVi SSC New York (True Stereo, 48kHz).irs
+hesuvi|HeSuVi SSC New York +.json
+hesuvi|irs/HeSuVi SSC New York + (True Stereo, 48kHz).irs
+hesuvi|HeSuVi SSC Sydney.json
+hesuvi|irs/HeSuVi SSC Sydney (True Stereo, 48kHz).irs
+hesuvi|HeSuVi SSC Sydney +.json
+hesuvi|irs/HeSuVi SSC Sydney + (True Stereo, 48kHz).irs
+hesuvi|HeSuVi SSC Hù.json
+hesuvi|irs/HeSuVi SSC Hù (True Stereo, 48kHz).irs
+hesuvi|HeSuVi SSC Hù+.json
+hesuvi|irs/HeSuVi SSC Hù+ (True Stereo, 48kHz).irs
+hesuvi|HeSuVi OpenAL +.json
+hesuvi|irs/HeSuVi OpenAL + (True Stereo, 48kHz).irs
+hesuvi|HeSuVi OpenAL ++.json
+hesuvi|irs/HeSuVi OpenAL ++ (True Stereo, 48kHz).irs
+hesuvi|HeSuVi OpenAL +++.json
+hesuvi|irs/HeSuVi OpenAL +++ (True Stereo, 48kHz).irs
+hesuvi|HeSuVi Flux HEar.json
+hesuvi|irs/HeSuVi Flux HEar (True Stereo, 48kHz).irs
+hesuvi|HeSuVi Razer Surround.json
+hesuvi|irs/HeSuVi Razer Surround (True Stereo, 48kHz).irs
+hesuvi|HeSuVi Razer Surround Bass Fix.json
+hesuvi|irs/HeSuVi Razer Surround Bass Fix (True Stereo, 48kHz).irs
+hesuvi|HeSuVi OpenAL CIAIR.json
+hesuvi|irs/HeSuVi OpenAL CIAIR (True Stereo, 48kHz).irs
+hesuvi|HeSuVi OpenAL CIAIR Wide.json
+hesuvi|irs/HeSuVi OpenAL CIAIR Wide (True Stereo, 48kHz).irs
+hesuvi|HeSuVi OpenAL Default.json
+hesuvi|irs/HeSuVi OpenAL Default (True Stereo, 48kHz).irs
+crossfeed|Synthetic Spherical Crossfeed.json
+crossfeed|irs/Synthetic Spherical-Head Crossfeed (48kHz).irs
+efotech|EFOtech MLV 00256.json
+efotech|irs/EFOtech MLV 00256 (True Stereo, 48kHz).irs
+efotech|EFOtech MLV 00512.json
+efotech|irs/EFOtech MLV 00512 (True Stereo, 48kHz).irs
+efotech|EFOtech MLV 01024.json
+efotech|irs/EFOtech MLV 01024 (True Stereo, 48kHz).irs
+efotech|EFOtech MLV 02048.json
+efotech|irs/EFOtech MLV 02048 (True Stereo, 48kHz).irs
+efotech|EFOtech MLV 04096.json
+efotech|irs/EFOtech MLV 04096 (True Stereo, 48kHz).irs
+efotech|EFOtech MLV 22000.json
+efotech|irs/EFOtech MLV 22000 (True Stereo, 48kHz).irs
+kemar|MIT KEMAR HRTF (SOFA).json
+kemar|irs/MIT KEMAR HRTF (Normal Pinna).sofa
+ari|ARI HRTF (SOFA).json
+ari|irs/ARI HRTF (Subject NH2, DTF).sofa
+gentledynamics|GentleDynamics.json
+gentledynamics|GentleDynamics Feather Loudness.json
+gentledynamics|GentleDynamics Dialogue Clarity Engine.json
+aurora|Aurora Immersive.json
+cupertino|Cupertino Laptop Speakers.json
+ircam|IRCAM LISTEN HRTF (Subject 1002).json
+ircam|irs/IRCAM LISTEN HRTF (Subject 1002, True Stereo, 48kHz).irs
+utility|Night Listening.json
+utility|Levelizer (EBU R128).json
+utility|Mono Sum (Accessibility).json
+utility|Tiny Speaker Rescue.json
+utility|Analog Warmth.json
+utility|Concert Hall.json
+utility|Movie Dialogue Boost.json
+utility|Reference Transparency.json
+binaural|Synthetic Binaural Room.json
+binaural|irs/Synthetic Binaural Room (Structural HRTF, 48kHz).irs
+libreatmos|LibreAtmos.json
+libreatmos|irs/LibreAtmos (Stereo, 48kHz).irs
+flora|FLORA Cinema.json
+flora|irs/FLORA Cinema (True Stereo, 48kHz).irs
+flora|FLORA Music.json
+flora|irs/FLORA Music (True Stereo, 48kHz).irs
+input|input/Voice Noise Suppression.json
+input|input/Voice Broadcast.json
+# END MANIFEST
+MANIFEST_EOF
+}
+
+# Menu: entry N is MENU_GROUPS[N-1] / MENU_LABELS[N-1]. "all" selects every
+# manifest entry, "uninstall" removes them, anything else is a manifest group.
+MENU_GROUPS=(
+    all hesuvi crossfeed efotech kemar ari gentledynamics aurora cupertino
+    ircam utility binaural libreatmos flora input uninstall
+)
+MENU_LABELS=(
+    "Install all presets (output and input)"
+    "Install all HeSuVi virtualization presets"
+    "Install Synthetic Spherical Crossfeed preset"
+    "Install all EFOtech MLV headphone virtualization presets"
+    "Install MIT KEMAR HRTF (SOFA) preset"
+    "Install ARI HRTF (SOFA) preset"
+    "Install all GentleDynamics presets"
+    "Install Aurora Immersive preset"
+    "Install Cupertino Laptop Speakers preset"
+    "Install IRCAM LISTEN HRTF (Subject 1002) preset"
+    "Install all Utility & Effects presets (Night Listening, Levelizer, Mono Sum, Tiny Speaker Rescue, Analog Warmth, Concert Hall, Movie Dialogue Boost, Reference Transparency)"
+    "Install Synthetic Binaural Room preset"
+    "Install LibreAtmos preset"
+    "Install FLORA presets (Cinema/Music)"
+    "Install microphone (input) presets (Voice Noise Suppression, Voice Broadcast)"
+    "Uninstall all presets installed by this script"
+)
+
+ACTION=""
+ASSUME_YES=0
+FORCE_FLATPAK=0
+PRESETS_DIRECTORY=""
+TMP_FILE=""
+FAILED=()
+
+usage() {
+    local i
+    cat <<EOF
+Usage: ${0##*/} [options] [choice]
+
+Choice (omit it for the interactive menu; required when stdin is not a TTY):
+EOF
+    for i in "${!MENU_LABELS[@]}"; do
+        printf '  %2d  %-15s %s\n' "$((i + 1))" "${MENU_GROUPS[i]}" "${MENU_LABELS[i]}"
+    done
+    cat <<EOF
+
+Options:
+  --ref <tag|branch>  Git ref to download from (default: main,
+                      or \$EASYEFFECTS_PRESETS_REF)
+  --flatpak           Use the Flatpak data directory even if native
+                      EasyEffects is installed too
+  -y, --yes           Do not ask for confirmation when uninstalling
+  -h, --help          Show this help
+
+Environment:
+  EASYEFFECTS_PRESETS_REF       same as --ref
+  EASYEFFECTS_PRESETS_BASE_URL  override the whole base URL
+                                (default: https://raw.githubusercontent.com/${REPO_SLUG}/<ref>)
+
+Examples:
+  ${0##*/} all
+  ${0##*/} 3
+  ${0##*/} --ref v1.0 hesuvi
+  ${0##*/} --yes uninstall
+EOF
+}
+
+die() {
+    echo "Error! $*" >&2
+    exit 1
+}
+
+cleanup() {
+    if [ -n "$TMP_FILE" ]; then
+        rm -f -- "$TMP_FILE"
+    fi
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+# Percent-encode a repo-relative path (keeps "/" as is), pure bash.
+urlencode() {
+    local LC_ALL=C
+    local s="$1" out="" c i
+    for ((i = 0; i < ${#s}; i++)); do
+        c="${s:i:1}"
+        case "$c" in
+            [a-zA-Z0-9._~/-]) out+="$c" ;;
+            *)
+                printf -v c '%%%02X' "'$c"
+                out+="$c"
+                ;;
+        esac
+    done
+    printf '%s' "$out"
+}
+
+# Manifest paths of one group ("all" = every group), one per line.
+manifest_paths() {
+    local group="$1" g p
+    while IFS='|' read -r g p; do
+        case "$g" in '' | '#'*) continue ;; esac
+        if [ "$group" = all ] || [ "$g" = "$group" ]; then
+            printf '%s\n' "$p"
+        fi
+    done < <(manifest)
+}
+
+# Map a repo-relative path to its destination below $PRESETS_DIRECTORY.
+dest_for() {
+    case "$1" in
+        irs/* | input/*) printf '%s/%s' "$PRESETS_DIRECTORY" "$1" ;;
+        *) printf '%s/output/%s' "$PRESETS_DIRECTORY" "$1" ;;
+    esac
+}
 
 check_installation() {
-    if command -v flatpak &>/dev/null && flatpak list | grep -q "com.github.wwmm.easyeffects"; then
-        PRESETS_DIRECTORY="$HOME/.var/app/com.github.wwmm.easyeffects/data/easyeffects"
-    elif command -v easyeffects >/dev/null; then
-        PRESETS_DIRECTORY="${XDG_DATA_HOME:-$HOME/.local/share}/easyeffects"
+    local flatpak_dir="$HOME/.var/app/$FLATPAK_ID/data/easyeffects"
+    local native_dir="${XDG_DATA_HOME:-$HOME/.local/share}/easyeffects"
+    local have_flatpak=0 have_native=0
+
+    if command -v flatpak >/dev/null 2>&1 && flatpak info "$FLATPAK_ID" >/dev/null 2>&1; then
+        have_flatpak=1
+    fi
+    if command -v easyeffects >/dev/null 2>&1; then
+        have_native=1
+    fi
+
+    if [ "$FORCE_FLATPAK" -eq 1 ]; then
+        [ "$have_flatpak" -eq 1 ] || die "--flatpak given but the Flatpak $FLATPAK_ID is not installed."
+        PRESETS_DIRECTORY="$flatpak_dir"
+        echo "Using Flatpak EasyEffects: $PRESETS_DIRECTORY"
+    elif [ "$have_native" -eq 1 ]; then
+        PRESETS_DIRECTORY="$native_dir"
+        if [ "$have_flatpak" -eq 1 ]; then
+            echo "Both native and Flatpak EasyEffects found; using native (pass --flatpak for Flatpak): $PRESETS_DIRECTORY"
+        else
+            echo "Using native EasyEffects: $PRESETS_DIRECTORY"
+        fi
+    elif [ "$have_flatpak" -eq 1 ]; then
+        PRESETS_DIRECTORY="$flatpak_dir"
+        echo "Using Flatpak EasyEffects: $PRESETS_DIRECTORY"
     else
-        echo "Error! Couldn't find EasyEffects presets directory!"
-        exit 1
-    fi
-    mkdir -p "$PRESETS_DIRECTORY"
-}
-
-check_impulse_response_directory() {
-    if [ ! -d "$PRESETS_DIRECTORY/irs" ]; then
-        mkdir "$PRESETS_DIRECTORY/irs"
-    fi
-    if [ ! -d "$PRESETS_DIRECTORY/output" ]; then
-        mkdir "$PRESETS_DIRECTORY/output"
+        die "Couldn't find EasyEffects (native or Flatpak)!"
     fi
 }
 
-read_choice() {
-    while :; do
-        read -r CHOICE
-        if [ -z "$CHOICE" ]; then
-            CHOICE=1 #default
-        fi
-        if [[ $CHOICE =~ ^([1-9]|1[0-4])$ ]]; then
-            break
-        fi
-        echo "Invalid option! Please input a value between 1 and 14!"
-    done
+# Number of menu entries; read_choice and argument parsing derive from it.
+menu_size() {
+    printf '%s' "${#MENU_LABELS[@]}"
 }
 
 install_menu() {
-    echo "Please select an option for presets installation (Default=1)"
-    echo "1) Install all presets"
-    echo "2) Install all HeSuVi virtualization presets"
-    echo "3) Install Synthetic Spherical Crossfeed preset"
-    echo "4) Install all EFOtech MLV headphone virtualization presets"
-    echo "5) Install MIT KEMAR HRTF (SOFA) preset"
-    echo "6) Install ARI HRTF (SOFA) preset"
-    echo "7) Install all GentleDynamics presets"
-    echo "8) Install Aurora Immersive preset"
-    echo "9) Install Cupertino Laptop Speakers preset"
-    echo "10) Install IRCAM LISTEN HRTF (Subject 1002) preset"
-    echo "11) Install all Utility & Effects presets (Night Listening, Levelizer, Mono Sum, Tiny Speaker Rescue, Analog Warmth, Concert Hall, Movie Dialogue Boost, Reference Transparency)"
-    echo "12) Install Synthetic Binaural Room preset"
-    echo "13) Install LibreAtmos preset"
-    echo "14) Install FLORA presets (Cinema/Music)"
+    local i
+    echo "Please select an option (Default=1)"
+    for i in "${!MENU_LABELS[@]}"; do
+        echo "$((i + 1))) ${MENU_LABELS[i]}"
+    done
+}
+
+read_choice() {
+    local max choice
+    max="$(menu_size)"
+    while :; do
+        if ! read -r -p "> " choice; then
+            echo >&2
+            die "No input (EOF)."
+        fi
+        choice="${choice:-1}"
+        if [[ $choice =~ ^[0-9]+$ ]] && [ "$((10#$choice))" -ge 1 ] && [ "$((10#$choice))" -le "$max" ]; then
+            ACTION="${MENU_GROUPS[$((10#$choice - 1))]}"
+            return 0
+        fi
+        echo "Invalid option! Please input a value between 1 and $max!"
+    done
+}
+
+# Resolve a command line choice (number, "all", "uninstall" or group name).
+resolve_choice() {
+    local arg="$1" max g
+    max="$(menu_size)"
+    if [[ $arg =~ ^[0-9]+$ ]]; then
+        if [ "$((10#$arg))" -ge 1 ] && [ "$((10#$arg))" -le "$max" ]; then
+            ACTION="${MENU_GROUPS[$((10#$arg - 1))]}"
+            return 0
+        fi
+        echo "Invalid option '$arg'! Please use a value between 1 and $max." >&2
+        return 1
+    fi
+    for g in "${MENU_GROUPS[@]}"; do
+        if [ "$arg" = "$g" ]; then
+            ACTION="$g"
+            return 0
+        fi
+    done
+    echo "Unknown choice '$arg'." >&2
+    return 1
+}
+
+# Download one repo-relative path to its destination (atomically).
+fetch() {
+    local path="$1" dest dir
+    dest="$(dest_for "$path")"
+    dir="${dest%/*}"
+    if ! mkdir -p -- "$dir"; then
+        echo "FAILED: $path (cannot create $dir)" >&2
+        FAILED+=("$path")
+        return 1
+    fi
+    if ! TMP_FILE="$(mktemp -- "$dir/.easyeffects-presets.XXXXXX")"; then
+        TMP_FILE=""
+        echo "FAILED: $path (cannot create temporary file in $dir)" >&2
+        FAILED+=("$path")
+        return 1
+    fi
+    if curl --fail --silent --show-error --location --retry 3 \
+        --output "$TMP_FILE" -- "$BASE_URL/$(urlencode "$path")" &&
+        chmod 644 -- "$TMP_FILE" &&
+        mv -f -- "$TMP_FILE" "$dest"; then
+        TMP_FILE=""
+        return 0
+    fi
+    rm -f -- "$TMP_FILE"
+    TMP_FILE=""
+    echo "FAILED: $path" >&2
+    FAILED+=("$path")
+    return 1
 }
 
 install_presets() {
-    case $CHOICE in
-        1)
-            echo "Installing Synthetic Spherical Crossfeed preset..."
-            curl --fail "$GIT_REPOSITORY/Synthetic%20Spherical%20Crossfeed.json" --output "$PRESETS_DIRECTORY/output/Synthetic Spherical Crossfeed.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/Synthetic%20Spherical-Head%20Crossfeed%20(48kHz).irs" --output "$PRESETS_DIRECTORY/irs/Synthetic Spherical-Head Crossfeed (48kHz).irs" --silent
-            echo "Installing Synthetic Binaural Room preset..."
-            curl --fail "$GIT_REPOSITORY/Synthetic%20Binaural%20Room.json" --output "$PRESETS_DIRECTORY/output/Synthetic Binaural Room.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/Synthetic%20Binaural%20Room%20(Structural%20HRTF%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/Synthetic Binaural Room (Structural HRTF, 48kHz).irs" --silent
-            echo "Installing LibreAtmos preset..."
-            curl --fail "$GIT_REPOSITORY/LibreAtmos.json" --output "$PRESETS_DIRECTORY/output/LibreAtmos.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/LibreAtmos%20(Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/LibreAtmos (Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi Atmos preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Atmos.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Atmos.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Atmos%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Atmos (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi DTS Headphone X preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20DTS%20Headphone%20X.json" --output "$PRESETS_DIRECTORY/output/HeSuVi DTS Headphone X.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20DTS%20Headphone%20X%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi DTS Headphone X (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi GSX preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20GSX.json" --output "$PRESETS_DIRECTORY/output/HeSuVi GSX.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20GSX%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi GSX (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi CMSS-3D Entertainment preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20CMSS-3D%20Entertainment.json" --output "$PRESETS_DIRECTORY/output/HeSuVi CMSS-3D Entertainment.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20CMSS-3D%20Entertainment%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi CMSS-3D Entertainment (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi CMSS-3D Game preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20CMSS-3D%20Game.json" --output "$PRESETS_DIRECTORY/output/HeSuVi CMSS-3D Game.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20CMSS-3D%20Game%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi CMSS-3D Game (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi CMSS-3D RX+ preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20CMSS-3D%20RX%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi CMSS-3D RX+.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20CMSS-3D%20RX%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi CMSS-3D RX+ (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi Dolby Headphone preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Dolby%20Headphone.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Dolby Headphone.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Dolby%20Headphone%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Dolby Headphone (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi Dolby Home Theater preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Dolby%20Home%20Theater.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Dolby Home Theater.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Dolby%20Home%20Theater%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Dolby Home Theater (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi DS3D preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20DS3D.json" --output "$PRESETS_DIRECTORY/output/HeSuVi DS3D.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20DS3D%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi DS3D (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi DVS preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20DVS.json" --output "$PRESETS_DIRECTORY/output/HeSuVi DVS.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20DVS%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi DVS (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi Nahimic preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Nahimic.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Nahimic.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Nahimic%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Nahimic (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi Windows Sonic preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Windows%20Sonic.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Windows Sonic.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Windows%20Sonic%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Windows Sonic (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi Out Of Your Head preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Out%20Of%20Your%20Head.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Out Of Your Head.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Out%20Of%20Your%20Head%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Out Of Your Head (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi Waves preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Waves.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Waves.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Waves%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Waves (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi Sound Blaster SBX preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Sound%20Blaster%20SBX.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Sound Blaster SBX.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Sound%20Blaster%20SBX%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Sound Blaster SBX (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Dolby%20Headphone%20%2B%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Dolby Headphone ++.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Dolby%20Headphone%20%2B%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Dolby Headphone ++ (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi DS3D + preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20DS3D%20%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi DS3D +.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20DS3D%20%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi DS3D + (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20DS3D%20%2B%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi DS3D ++.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20DS3D%20%2B%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi DS3D ++ (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20DS3D%20%2B%2B%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi DS3D +++.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20DS3D%20%2B%2B%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi DS3D +++ (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi GSX + preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20GSX%20%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi GSX +.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20GSX%20%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi GSX + (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20GSX%20%2B%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi GSX ++.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20GSX%20%2B%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi GSX ++ (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20DVS%20%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi DVS +.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20DVS%20%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi DVS + (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Sound%20Blaster%20SBX%2033.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Sound Blaster SBX 33.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Sound%20Blaster%20SBX%2033%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Sound Blaster SBX 33 (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Sound%20Blaster%20SBX%2067.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Sound Blaster SBX 67.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Sound%20Blaster%20SBX%2067%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Sound Blaster SBX 67 (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Windows%20Sonic%20%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Windows Sonic +.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Windows%20Sonic%20%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Windows Sonic + (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Out%20Of%20Your%20Head%202.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Out Of Your Head 2.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Out%20Of%20Your%20Head%202%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Out Of Your Head 2 (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20SSC%20Dublin.json" --output "$PRESETS_DIRECTORY/output/HeSuVi SSC Dublin.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20SSC%20Dublin%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi SSC Dublin (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20SSC%20New%20York.json" --output "$PRESETS_DIRECTORY/output/HeSuVi SSC New York.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20SSC%20New%20York%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi SSC New York (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20SSC%20New%20York%20%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi SSC New York +.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20SSC%20New%20York%20%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi SSC New York + (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20SSC%20Sydney.json" --output "$PRESETS_DIRECTORY/output/HeSuVi SSC Sydney.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20SSC%20Sydney%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi SSC Sydney (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20SSC%20Sydney%20%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi SSC Sydney +.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20SSC%20Sydney%20%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi SSC Sydney + (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi SSC Hù preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20SSC%20H%C3%B9.json" --output "$PRESETS_DIRECTORY/output/HeSuVi SSC Hù.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20SSC%20H%C3%B9%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi SSC Hù (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi SSC Hù+ preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20SSC%20H%C3%B9%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi SSC Hù+.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20SSC%20H%C3%B9%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi SSC Hù+ (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20OpenAL%20%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi OpenAL +.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20OpenAL%20%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi OpenAL + (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20OpenAL%20%2B%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi OpenAL ++.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20OpenAL%20%2B%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi OpenAL ++ (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20OpenAL%20%2B%2B%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi OpenAL +++.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20OpenAL%20%2B%2B%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi OpenAL +++ (True Stereo, 48kHz).irs" --silent
-            echo "Installing EFOtech MLV 00256 preset..."
-            curl --fail "$GIT_REPOSITORY/EFOtech%20MLV%2000256.json" --output "$PRESETS_DIRECTORY/output/EFOtech MLV 00256.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/EFOtech%20MLV%2000256%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/EFOtech MLV 00256 (True Stereo, 48kHz).irs" --silent
-            echo "Installing EFOtech MLV 00512 preset..."
-            curl --fail "$GIT_REPOSITORY/EFOtech%20MLV%2000512.json" --output "$PRESETS_DIRECTORY/output/EFOtech MLV 00512.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/EFOtech%20MLV%2000512%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/EFOtech MLV 00512 (True Stereo, 48kHz).irs" --silent
-            echo "Installing EFOtech MLV 01024 preset..."
-            curl --fail "$GIT_REPOSITORY/EFOtech%20MLV%2001024.json" --output "$PRESETS_DIRECTORY/output/EFOtech MLV 01024.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/EFOtech%20MLV%2001024%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/EFOtech MLV 01024 (True Stereo, 48kHz).irs" --silent
-            echo "Installing EFOtech MLV 02048 preset..."
-            curl --fail "$GIT_REPOSITORY/EFOtech%20MLV%2002048.json" --output "$PRESETS_DIRECTORY/output/EFOtech MLV 02048.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/EFOtech%20MLV%2002048%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/EFOtech MLV 02048 (True Stereo, 48kHz).irs" --silent
-            echo "Installing EFOtech MLV 04096 preset..."
-            curl --fail "$GIT_REPOSITORY/EFOtech%20MLV%2004096.json" --output "$PRESETS_DIRECTORY/output/EFOtech MLV 04096.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/EFOtech%20MLV%2004096%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/EFOtech MLV 04096 (True Stereo, 48kHz).irs" --silent
-            echo "Installing EFOtech MLV 22000 preset..."
-            curl --fail "$GIT_REPOSITORY/EFOtech%20MLV%2022000.json" --output "$PRESETS_DIRECTORY/output/EFOtech MLV 22000.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/EFOtech%20MLV%2022000%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/EFOtech MLV 22000 (True Stereo, 48kHz).irs" --silent
-            echo "Installing MIT KEMAR HRTF (SOFA) preset..."
-            curl --fail "$GIT_REPOSITORY/MIT%20KEMAR%20HRTF%20(SOFA).json" --output "$PRESETS_DIRECTORY/output/MIT KEMAR HRTF (SOFA).json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/MIT%20KEMAR%20HRTF%20(Normal%20Pinna).sofa" --output "$PRESETS_DIRECTORY/irs/MIT KEMAR HRTF (Normal Pinna).sofa" --silent
-            echo "Installing ARI HRTF (SOFA) preset..."
-            curl --fail "$GIT_REPOSITORY/ARI%20HRTF%20(SOFA).json" --output "$PRESETS_DIRECTORY/output/ARI HRTF (SOFA).json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/ARI%20HRTF%20(Subject%20NH2%2C%20DTF).sofa" --output "$PRESETS_DIRECTORY/irs/ARI HRTF (Subject NH2, DTF).sofa" --silent
-            echo "Installing GentleDynamics preset..."
-            curl --fail "$GIT_REPOSITORY/GentleDynamics.json" --output "$PRESETS_DIRECTORY/output/GentleDynamics.json" --silent
-            echo "Installing GentleDynamics Feather Loudness preset..."
-            curl --fail "$GIT_REPOSITORY/GentleDynamics%20Feather%20Loudness.json" --output "$PRESETS_DIRECTORY/output/GentleDynamics Feather Loudness.json" --silent
-            echo "Installing GentleDynamics Dialogue Clarity Engine preset..."
-            curl --fail "$GIT_REPOSITORY/GentleDynamics%20Dialogue%20Clarity%20Engine.json" --output "$PRESETS_DIRECTORY/output/GentleDynamics Dialogue Clarity Engine.json" --silent
-            echo "Installing Aurora Immersive preset..."
-            curl --fail "$GIT_REPOSITORY/Aurora%20Immersive.json" --output "$PRESETS_DIRECTORY/output/Aurora Immersive.json" --silent
-            echo "Installing Cupertino Laptop Speakers preset..."
-            curl --fail "$GIT_REPOSITORY/Cupertino%20Laptop%20Speakers.json" --output "$PRESETS_DIRECTORY/output/Cupertino Laptop Speakers.json" --silent
-            echo "Installing new HeSuVi virtualization presets (Flux HEar, Razer, OpenAL, SBX 100)..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Flux%20HEar.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Flux HEar.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Flux%20HEar%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Flux HEar (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Razer%20Surround.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Razer Surround.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Razer%20Surround%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Razer Surround (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Razer%20Surround%20Bass%20Fix.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Razer Surround Bass Fix.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Razer%20Surround%20Bass%20Fix%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Razer Surround Bass Fix (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20OpenAL%20CIAIR.json" --output "$PRESETS_DIRECTORY/output/HeSuVi OpenAL CIAIR.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20OpenAL%20CIAIR%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi OpenAL CIAIR (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20OpenAL%20CIAIR%20Wide.json" --output "$PRESETS_DIRECTORY/output/HeSuVi OpenAL CIAIR Wide.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20OpenAL%20CIAIR%20Wide%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi OpenAL CIAIR Wide (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20OpenAL%20Default.json" --output "$PRESETS_DIRECTORY/output/HeSuVi OpenAL Default.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20OpenAL%20Default%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi OpenAL Default (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Sound%20Blaster%20SBX%20100.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Sound Blaster SBX 100.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Sound%20Blaster%20SBX%20100%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Sound Blaster SBX 100 (True Stereo, 48kHz).irs" --silent
-            echo "Installing IRCAM LISTEN HRTF (Subject 1002) preset..."
-            curl --fail "$GIT_REPOSITORY/IRCAM%20LISTEN%20HRTF%20(Subject%201002).json" --output "$PRESETS_DIRECTORY/output/IRCAM LISTEN HRTF (Subject 1002).json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/IRCAM%20LISTEN%20HRTF%20(Subject%201002%2C%20True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/IRCAM LISTEN HRTF (Subject 1002, True Stereo, 48kHz).irs" --silent
-            echo "Installing Utility & Effects presets (Night Listening, Levelizer, Mono Sum, Tiny Speaker Rescue, Analog Warmth, Concert Hall, Movie Dialogue Boost, Reference Transparency)..."
-            curl --fail "$GIT_REPOSITORY/Night%20Listening.json" --output "$PRESETS_DIRECTORY/output/Night Listening.json" --silent
-            curl --fail "$GIT_REPOSITORY/Levelizer%20(EBU%20R128).json" --output "$PRESETS_DIRECTORY/output/Levelizer (EBU R128).json" --silent
-            curl --fail "$GIT_REPOSITORY/Mono%20Sum%20(Accessibility).json" --output "$PRESETS_DIRECTORY/output/Mono Sum (Accessibility).json" --silent
-            curl --fail "$GIT_REPOSITORY/Tiny%20Speaker%20Rescue.json" --output "$PRESETS_DIRECTORY/output/Tiny Speaker Rescue.json" --silent
-            curl --fail "$GIT_REPOSITORY/Analog%20Warmth.json" --output "$PRESETS_DIRECTORY/output/Analog Warmth.json" --silent
-            curl --fail "$GIT_REPOSITORY/Concert%20Hall.json" --output "$PRESETS_DIRECTORY/output/Concert Hall.json" --silent
-            curl --fail "$GIT_REPOSITORY/Movie%20Dialogue%20Boost.json" --output "$PRESETS_DIRECTORY/output/Movie Dialogue Boost.json" --silent
-            curl --fail "$GIT_REPOSITORY/Reference%20Transparency.json" --output "$PRESETS_DIRECTORY/output/Reference Transparency.json" --silent
-            echo "Installing FLORA Cinema preset..."
-            curl --fail "$GIT_REPOSITORY/FLORA%20Cinema.json" --output "$PRESETS_DIRECTORY/output/FLORA Cinema.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Cinema%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Cinema (True Stereo, 48kHz).irs" --silent
-            echo "Installing FLORA Music preset..."
-            curl --fail "$GIT_REPOSITORY/FLORA%20Music.json" --output "$PRESETS_DIRECTORY/output/FLORA Music.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Music%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Music (True Stereo, 48kHz).irs" --silent
-            ;;
-        2)
-            echo "Installing all HeSuVi virtualization presets..."
-            echo "Installing HeSuVi Atmos preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Atmos.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Atmos.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Atmos%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Atmos (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20DTS%20Headphone%20X.json" --output "$PRESETS_DIRECTORY/output/HeSuVi DTS Headphone X.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20DTS%20Headphone%20X%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi DTS Headphone X (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20GSX.json" --output "$PRESETS_DIRECTORY/output/HeSuVi GSX.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20GSX%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi GSX (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20CMSS-3D%20Entertainment.json" --output "$PRESETS_DIRECTORY/output/HeSuVi CMSS-3D Entertainment.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20CMSS-3D%20Entertainment%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi CMSS-3D Entertainment (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20CMSS-3D%20Game.json" --output "$PRESETS_DIRECTORY/output/HeSuVi CMSS-3D Game.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20CMSS-3D%20Game%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi CMSS-3D Game (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20CMSS-3D%20RX%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi CMSS-3D RX+.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20CMSS-3D%20RX%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi CMSS-3D RX+ (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Dolby%20Headphone.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Dolby Headphone.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Dolby%20Headphone%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Dolby Headphone (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Dolby%20Home%20Theater.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Dolby Home Theater.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Dolby%20Home%20Theater%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Dolby Home Theater (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20DS3D.json" --output "$PRESETS_DIRECTORY/output/HeSuVi DS3D.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20DS3D%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi DS3D (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20DVS.json" --output "$PRESETS_DIRECTORY/output/HeSuVi DVS.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20DVS%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi DVS (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Nahimic.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Nahimic.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Nahimic%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Nahimic (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Windows%20Sonic.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Windows Sonic.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Windows%20Sonic%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Windows Sonic (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Out%20Of%20Your%20Head.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Out Of Your Head.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Out%20Of%20Your%20Head%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Out Of Your Head (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Waves.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Waves.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Waves%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Waves (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Sound%20Blaster%20SBX.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Sound Blaster SBX.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Sound%20Blaster%20SBX%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Sound Blaster SBX (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Dolby%20Headphone%20%2B%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Dolby Headphone ++.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Dolby%20Headphone%20%2B%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Dolby Headphone ++ (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi DS3D + preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20DS3D%20%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi DS3D +.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20DS3D%20%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi DS3D + (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20DS3D%20%2B%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi DS3D ++.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20DS3D%20%2B%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi DS3D ++ (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20DS3D%20%2B%2B%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi DS3D +++.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20DS3D%20%2B%2B%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi DS3D +++ (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi GSX + preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20GSX%20%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi GSX +.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20GSX%20%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi GSX + (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20GSX%20%2B%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi GSX ++.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20GSX%20%2B%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi GSX ++ (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20DVS%20%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi DVS +.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20DVS%20%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi DVS + (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Sound%20Blaster%20SBX%2033.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Sound Blaster SBX 33.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Sound%20Blaster%20SBX%2033%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Sound Blaster SBX 33 (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Sound%20Blaster%20SBX%2067.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Sound Blaster SBX 67.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Sound%20Blaster%20SBX%2067%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Sound Blaster SBX 67 (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Windows%20Sonic%20%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Windows Sonic +.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Windows%20Sonic%20%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Windows Sonic + (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Out%20Of%20Your%20Head%202.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Out Of Your Head 2.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Out%20Of%20Your%20Head%202%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Out Of Your Head 2 (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20SSC%20Dublin.json" --output "$PRESETS_DIRECTORY/output/HeSuVi SSC Dublin.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20SSC%20Dublin%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi SSC Dublin (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20SSC%20New%20York.json" --output "$PRESETS_DIRECTORY/output/HeSuVi SSC New York.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20SSC%20New%20York%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi SSC New York (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20SSC%20New%20York%20%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi SSC New York +.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20SSC%20New%20York%20%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi SSC New York + (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20SSC%20Sydney.json" --output "$PRESETS_DIRECTORY/output/HeSuVi SSC Sydney.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20SSC%20Sydney%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi SSC Sydney (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20SSC%20Sydney%20%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi SSC Sydney +.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20SSC%20Sydney%20%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi SSC Sydney + (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi SSC Hù preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20SSC%20H%C3%B9.json" --output "$PRESETS_DIRECTORY/output/HeSuVi SSC Hù.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20SSC%20H%C3%B9%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi SSC Hù (True Stereo, 48kHz).irs" --silent
-            echo "Installing HeSuVi SSC Hù+ preset..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20SSC%20H%C3%B9%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi SSC Hù+.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20SSC%20H%C3%B9%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi SSC Hù+ (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20OpenAL%20%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi OpenAL +.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20OpenAL%20%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi OpenAL + (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20OpenAL%20%2B%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi OpenAL ++.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20OpenAL%20%2B%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi OpenAL ++ (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20OpenAL%20%2B%2B%2B.json" --output "$PRESETS_DIRECTORY/output/HeSuVi OpenAL +++.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20OpenAL%20%2B%2B%2B%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi OpenAL +++ (True Stereo, 48kHz).irs" --silent
-            echo "Installing new HeSuVi virtualization presets (Flux HEar, Razer, OpenAL, SBX 100)..."
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Flux%20HEar.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Flux HEar.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Flux%20HEar%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Flux HEar (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Razer%20Surround.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Razer Surround.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Razer%20Surround%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Razer Surround (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Razer%20Surround%20Bass%20Fix.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Razer Surround Bass Fix.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Razer%20Surround%20Bass%20Fix%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Razer Surround Bass Fix (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20OpenAL%20CIAIR.json" --output "$PRESETS_DIRECTORY/output/HeSuVi OpenAL CIAIR.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20OpenAL%20CIAIR%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi OpenAL CIAIR (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20OpenAL%20CIAIR%20Wide.json" --output "$PRESETS_DIRECTORY/output/HeSuVi OpenAL CIAIR Wide.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20OpenAL%20CIAIR%20Wide%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi OpenAL CIAIR Wide (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20OpenAL%20Default.json" --output "$PRESETS_DIRECTORY/output/HeSuVi OpenAL Default.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20OpenAL%20Default%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi OpenAL Default (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/HeSuVi%20Sound%20Blaster%20SBX%20100.json" --output "$PRESETS_DIRECTORY/output/HeSuVi Sound Blaster SBX 100.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/HeSuVi%20Sound%20Blaster%20SBX%20100%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/HeSuVi Sound Blaster SBX 100 (True Stereo, 48kHz).irs" --silent
-            ;;
+    local group="$1" path total=0 ok=0
+    while IFS= read -r path; do
+        total=$((total + 1))
+        if fetch "$path"; then
+            ok=$((ok + 1))
+        fi
+    done < <(manifest_paths "$group")
 
-        3)
-            echo "Installing Synthetic Spherical Crossfeed preset..."
-            curl --fail "$GIT_REPOSITORY/Synthetic%20Spherical%20Crossfeed.json" --output "$PRESETS_DIRECTORY/output/Synthetic Spherical Crossfeed.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/Synthetic%20Spherical-Head%20Crossfeed%20(48kHz).irs" --output "$PRESETS_DIRECTORY/irs/Synthetic Spherical-Head Crossfeed (48kHz).irs" --silent
-            ;;
-
-        4)
-            echo "Installing all EFOtech MLV headphone virtualization presets..."
-            curl --fail "$GIT_REPOSITORY/EFOtech%20MLV%2000256.json" --output "$PRESETS_DIRECTORY/output/EFOtech MLV 00256.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/EFOtech%20MLV%2000256%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/EFOtech MLV 00256 (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/EFOtech%20MLV%2000512.json" --output "$PRESETS_DIRECTORY/output/EFOtech MLV 00512.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/EFOtech%20MLV%2000512%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/EFOtech MLV 00512 (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/EFOtech%20MLV%2001024.json" --output "$PRESETS_DIRECTORY/output/EFOtech MLV 01024.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/EFOtech%20MLV%2001024%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/EFOtech MLV 01024 (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/EFOtech%20MLV%2002048.json" --output "$PRESETS_DIRECTORY/output/EFOtech MLV 02048.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/EFOtech%20MLV%2002048%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/EFOtech MLV 02048 (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/EFOtech%20MLV%2004096.json" --output "$PRESETS_DIRECTORY/output/EFOtech MLV 04096.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/EFOtech%20MLV%2004096%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/EFOtech MLV 04096 (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/EFOtech%20MLV%2022000.json" --output "$PRESETS_DIRECTORY/output/EFOtech MLV 22000.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/EFOtech%20MLV%2022000%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/EFOtech MLV 22000 (True Stereo, 48kHz).irs" --silent
-            ;;
-
-        5)
-            echo "Installing MIT KEMAR HRTF (SOFA) preset..."
-            curl --fail "$GIT_REPOSITORY/MIT%20KEMAR%20HRTF%20(SOFA).json" --output "$PRESETS_DIRECTORY/output/MIT KEMAR HRTF (SOFA).json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/MIT%20KEMAR%20HRTF%20(Normal%20Pinna).sofa" --output "$PRESETS_DIRECTORY/irs/MIT KEMAR HRTF (Normal Pinna).sofa" --silent
-            ;;
-
-        6)
-            echo "Installing ARI HRTF (SOFA) preset..."
-            curl --fail "$GIT_REPOSITORY/ARI%20HRTF%20(SOFA).json" --output "$PRESETS_DIRECTORY/output/ARI HRTF (SOFA).json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/ARI%20HRTF%20(Subject%20NH2%2C%20DTF).sofa" --output "$PRESETS_DIRECTORY/irs/ARI HRTF (Subject NH2, DTF).sofa" --silent
-            ;;
-
-        7)
-            echo "Installing all GentleDynamics presets..."
-            curl --fail "$GIT_REPOSITORY/GentleDynamics.json" --output "$PRESETS_DIRECTORY/output/GentleDynamics.json" --silent
-            curl --fail "$GIT_REPOSITORY/GentleDynamics%20Feather%20Loudness.json" --output "$PRESETS_DIRECTORY/output/GentleDynamics Feather Loudness.json" --silent
-            curl --fail "$GIT_REPOSITORY/GentleDynamics%20Dialogue%20Clarity%20Engine.json" --output "$PRESETS_DIRECTORY/output/GentleDynamics Dialogue Clarity Engine.json" --silent
-            ;;
-
-        8)
-            echo "Installing Aurora Immersive preset..."
-            curl --fail "$GIT_REPOSITORY/Aurora%20Immersive.json" --output "$PRESETS_DIRECTORY/output/Aurora Immersive.json" --silent
-            ;;
-
-        9)
-            echo "Installing Cupertino Laptop Speakers preset..."
-            curl --fail "$GIT_REPOSITORY/Cupertino%20Laptop%20Speakers.json" --output "$PRESETS_DIRECTORY/output/Cupertino Laptop Speakers.json" --silent
-            ;;
-
-        10)
-            echo "Installing IRCAM LISTEN HRTF (Subject 1002) preset..."
-            curl --fail "$GIT_REPOSITORY/IRCAM%20LISTEN%20HRTF%20(Subject%201002).json" --output "$PRESETS_DIRECTORY/output/IRCAM LISTEN HRTF (Subject 1002).json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/IRCAM%20LISTEN%20HRTF%20(Subject%201002%2C%20True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/IRCAM LISTEN HRTF (Subject 1002, True Stereo, 48kHz).irs" --silent
-            ;;
-
-        11)
-            echo "Installing all Utility & Effects presets..."
-            curl --fail "$GIT_REPOSITORY/Night%20Listening.json" --output "$PRESETS_DIRECTORY/output/Night Listening.json" --silent
-            curl --fail "$GIT_REPOSITORY/Levelizer%20(EBU%20R128).json" --output "$PRESETS_DIRECTORY/output/Levelizer (EBU R128).json" --silent
-            curl --fail "$GIT_REPOSITORY/Mono%20Sum%20(Accessibility).json" --output "$PRESETS_DIRECTORY/output/Mono Sum (Accessibility).json" --silent
-            curl --fail "$GIT_REPOSITORY/Tiny%20Speaker%20Rescue.json" --output "$PRESETS_DIRECTORY/output/Tiny Speaker Rescue.json" --silent
-            curl --fail "$GIT_REPOSITORY/Analog%20Warmth.json" --output "$PRESETS_DIRECTORY/output/Analog Warmth.json" --silent
-            curl --fail "$GIT_REPOSITORY/Concert%20Hall.json" --output "$PRESETS_DIRECTORY/output/Concert Hall.json" --silent
-            curl --fail "$GIT_REPOSITORY/Movie%20Dialogue%20Boost.json" --output "$PRESETS_DIRECTORY/output/Movie Dialogue Boost.json" --silent
-            curl --fail "$GIT_REPOSITORY/Reference%20Transparency.json" --output "$PRESETS_DIRECTORY/output/Reference Transparency.json" --silent
-            ;;
-
-        12)
-            echo "Installing Synthetic Binaural Room preset..."
-            curl --fail "$GIT_REPOSITORY/Synthetic%20Binaural%20Room.json" --output "$PRESETS_DIRECTORY/output/Synthetic Binaural Room.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/Synthetic%20Binaural%20Room%20(Structural%20HRTF%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/Synthetic Binaural Room (Structural HRTF, 48kHz).irs" --silent
-            ;;
-
-        13)
-            echo "Installing LibreAtmos preset..."
-            curl --fail "$GIT_REPOSITORY/LibreAtmos.json" --output "$PRESETS_DIRECTORY/output/LibreAtmos.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/LibreAtmos%20(Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/LibreAtmos (Stereo, 48kHz).irs" --silent
-            ;;
-
-        14)
-            echo "Installing FLORA presets..."
-            curl --fail "$GIT_REPOSITORY/FLORA%20Cinema.json" --output "$PRESETS_DIRECTORY/output/FLORA Cinema.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Cinema%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Cinema (True Stereo, 48kHz).irs" --silent
-            curl --fail "$GIT_REPOSITORY/FLORA%20Music.json" --output "$PRESETS_DIRECTORY/output/FLORA Music.json" --silent
-            curl --fail "$GIT_REPOSITORY/irs/FLORA%20Music%20(True%20Stereo%2C%2048kHz).irs" --output "$PRESETS_DIRECTORY/irs/FLORA Music (True Stereo, 48kHz).irs" --silent
-            ;;
-
-    esac
-
+    if [ "$total" -eq 0 ]; then
+        die "Nothing to install for '$group'."
+    fi
+    echo "Installed $ok of $total file(s) into $PRESETS_DIRECTORY"
+    if [ "${#FAILED[@]}" -gt 0 ]; then
+        echo "Summary: ${#FAILED[@]} file(s) failed to download:" >&2
+        printf '  %s\n' "${FAILED[@]}" >&2
+        return 1
+    fi
+    return 0
 }
 
-check_installation
-check_impulse_response_directory
-install_menu
-read_choice
-install_presets
+uninstall_presets() {
+    local path dest answer removed=0 failed=0
+
+    if [ "$ASSUME_YES" -ne 1 ]; then
+        if [ ! -t 0 ]; then
+            echo "Refusing to uninstall non-interactively without --yes." >&2
+            exit 2
+        fi
+        read -r -p "Remove all presets listed in the manifest from $PRESETS_DIRECTORY? [y/N] " answer || answer=""
+        case "$answer" in
+            y | Y | yes | YES | Yes) ;;
+            *)
+                echo "Aborted."
+                return 0
+                ;;
+        esac
+    fi
+
+    while IFS= read -r path; do
+        dest="$(dest_for "$path")"
+        if [ -e "$dest" ] || [ -L "$dest" ]; then
+            if rm -f -- "$dest"; then
+                removed=$((removed + 1))
+            else
+                echo "FAILED: could not remove $dest" >&2
+                failed=$((failed + 1))
+            fi
+        fi
+    done < <(manifest_paths all)
+
+    echo "Removed $removed file(s) from $PRESETS_DIRECTORY"
+    if [ "$failed" -gt 0 ]; then
+        echo "Summary: $failed file(s) could not be removed." >&2
+        return 1
+    fi
+    return 0
+}
+
+main() {
+    local choice_arg=""
+
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            -h | --help)
+                usage
+                exit 0
+                ;;
+            --ref)
+                if [ "$#" -lt 2 ]; then
+                    echo "--ref needs an argument." >&2
+                    exit 2
+                fi
+                REF="$2"
+                shift
+                ;;
+            --ref=*) REF="${1#--ref=}" ;;
+            --flatpak) FORCE_FLATPAK=1 ;;
+            -y | --yes) ASSUME_YES=1 ;;
+            --)
+                shift
+                if [ "$#" -gt 0 ]; then
+                    choice_arg="$1"
+                    shift
+                fi
+                break
+                ;;
+            -*)
+                echo "Unknown option '$1'." >&2
+                usage >&2
+                exit 2
+                ;;
+            *)
+                if [ -n "$choice_arg" ]; then
+                    echo "Only one choice may be given." >&2
+                    usage >&2
+                    exit 2
+                fi
+                choice_arg="$1"
+                ;;
+        esac
+        shift
+    done
+    if [ "$#" -gt 0 ]; then
+        echo "Only one choice may be given." >&2
+        usage >&2
+        exit 2
+    fi
+
+    if [[ ! $REF =~ ^[A-Za-z0-9._/-]+$ ]]; then
+        echo "Invalid ref '$REF'." >&2
+        exit 2
+    fi
+    BASE_URL="${BASE_URL:-https://raw.githubusercontent.com/$REPO_SLUG/$REF}"
+    BASE_URL="${BASE_URL%/}"
+
+    if [ -n "$choice_arg" ]; then
+        resolve_choice "$choice_arg" || {
+            usage >&2
+            exit 2
+        }
+    elif [ ! -t 0 ]; then
+        usage >&2
+        exit 2
+    fi
+
+    command -v curl >/dev/null 2>&1 || die "curl is required."
+    check_installation
+
+    if [ -z "$ACTION" ]; then
+        install_menu
+        read_choice
+    fi
+
+    if [ "$ACTION" = uninstall ]; then
+        uninstall_presets
+        return
+    fi
+    echo "Downloading from $BASE_URL"
+    install_presets "$ACTION"
+}
+
+main "$@"

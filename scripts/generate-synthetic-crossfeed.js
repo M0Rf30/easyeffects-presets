@@ -32,10 +32,72 @@ const TRIM_THRESHOLD_DB = -80;  // trailing-silence trim threshold (see scripts/
 const TRIM_PAD_FRAMES = 16;
 const TRIM_FADE_FRAMES = 8;
 
+// ---- Level matching ----------------------------------------------------------------------------
+// Scale the kernel so that, for a mono (L=R) input, the power-averaged magnitude over
+// LEVEL_BAND_HZ across both ears is LEVEL_TARGET_DB. True-stereo order: LL, LR, RL, RR;
+// left ear = LL+RL, right ear = LR+RR. (The presets run with autogain off, so the stored
+// kernel scale is what the convolver applies.)
+const LEVEL_TARGET_DB = 0;
+const LEVEL_BAND_HZ = [200, 4000];
+
+function fftInPlace(re, im) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = (-2 * Math.PI) / len;
+    const wr = Math.cos(ang), wi = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let cr = 1, ci = 0;
+      for (let k = 0; k < len / 2; k++) {
+        const a = i + k, b = i + k + len / 2;
+        const tr = re[b] * cr - im[b] * ci, ti = re[b] * ci + im[b] * cr;
+        re[b] = re[a] - tr; im[b] = im[a] - ti;
+        re[a] += tr; im[a] += ti;
+        const nr = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = nr;
+      }
+    }
+  }
+}
+
+function measureLevelDb(pcm, fmt) {
+  const bpf = (fmt.numChannels * fmt.bitsPerSample) / 8;
+  const frames = pcm.length / bpf;
+  let nfft = 1;
+  while (nfft < frames * 2 || nfft < 32768) nfft <<= 1;
+  const ears = [0, 1].map(() => ({ re: new Float64Array(nfft), im: new Float64Array(nfft) }));
+  for (let i = 0; i < frames; i++) {
+    const v = [];
+    for (let c = 0; c < fmt.numChannels; c++) v.push(pcm.readFloatLE(i * bpf + c * 4));
+    ears[0].re[i] = v[0] + v[2]; // LL + RL
+    ears[1].re[i] = v[1] + v[3]; // LR + RR
+  }
+  let sum = 0, count = 0;
+  for (const e of ears) {
+    fftInPlace(e.re, e.im);
+    const lo = Math.ceil((LEVEL_BAND_HZ[0] * nfft) / fmt.sampleRate);
+    const hi = Math.floor((LEVEL_BAND_HZ[1] * nfft) / fmt.sampleRate);
+    for (let k = lo; k <= hi; k++) { sum += e.re[k] ** 2 + e.im[k] ** 2; count++; }
+  }
+  return 10 * Math.log10(sum / count);
+}
+
+function normalizeLevel(pcm, fmt) {
+  const measured = measureLevelDb(pcm, fmt);
+  const scale = 10 ** ((LEVEL_TARGET_DB - measured) / 20);
+  const out = Buffer.alloc(pcm.length);
+  for (let o = 0; o < pcm.length; o += 4) out.writeFloatLE(pcm.readFloatLE(o) * scale, o);
+  console.log(`Level ${measured.toFixed(2)} dB -> ${measureLevelDb(out, fmt).toFixed(2)} dB (scale ${scale.toFixed(5)})`);
+  return out;
+}
+
 function buildWav(pcmData, fmt) {
-  const fmtChunkSize = 18;
-  const factChunkSize = 4;
-  const headerSize = 4 + (8 + fmtChunkSize) + (8 + factChunkSize) + 8;
+  const fmtChunkSize = 16;
+  const headerSize = 4 + (8 + fmtChunkSize) + 8;
   const totalSize = headerSize + pcmData.length;
   const buf = Buffer.alloc(8 + totalSize);
   let o = 0;
@@ -52,10 +114,6 @@ function buildWav(pcmData, fmt) {
   buf.writeUInt32LE(byteRate, o); o += 4;
   buf.writeUInt16LE(blockAlign, o); o += 2;
   buf.writeUInt16LE(fmt.bitsPerSample, o); o += 2;
-  buf.writeUInt16LE(0, o); o += 2;
-  buf.write('fact', o); o += 4;
-  buf.writeUInt32LE(factChunkSize, o); o += 4;
-  buf.writeUInt32LE(pcmData.length / blockAlign, o); o += 4;
   buf.write('data', o); o += 4;
   buf.writeUInt32LE(pcmData.length, o); o += 4;
   pcmData.copy(buf, o);
@@ -145,7 +203,8 @@ function main() {
     pcm.writeFloatLE(chR[n], o + 12);
   }
 
-  const trimmedPcm = trimTrailingSilence(pcm, fmt, TRIM_THRESHOLD_DB, TRIM_PAD_FRAMES, TRIM_FADE_FRAMES);
+  const trimmedPcmRaw = trimTrailingSilence(pcm, fmt, TRIM_THRESHOLD_DB, TRIM_PAD_FRAMES, TRIM_FADE_FRAMES);
+  const trimmedPcm = normalizeLevel(trimmedPcmRaw, fmt);
   const wav = buildWav(trimmedPcm, fmt);
 
   const outPath = path.join(REPO_ROOT, 'irs', 'Synthetic Spherical-Head Crossfeed (48kHz).irs');

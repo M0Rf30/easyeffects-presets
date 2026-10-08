@@ -11,12 +11,12 @@
   <url type="vcs-browser">https://github.com/M0Rf30/easyeffects-presets</url>
   <url type="help">https://github.com/M0Rf30/easyeffects-presets</url>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>MIT AND GPL-3.0-only AND CC-BY-SA-3.0 AND LicenseRef-proprietary</project_license>
+  <project_license>MIT AND GPL-3.0-only AND CC-BY-SA-3.0 AND CC-BY-4.0 AND LicenseRef-proprietary</project_license>
   <description>
-    <p>Presets for Easy Effects: output presets (102) and microphone presets (2), plus the impulse responses and HRTF datasets they use. Bundled assets have mixed licenses; see THIRD-PARTY-NOTICES.md in the repository.</p>
+    <p>Presets for Easy Effects: output presets (105) and microphone presets (2), plus the impulse responses and HRTF datasets they use. Bundled assets have mixed licenses; see THIRD-PARTY-NOTICES.md in the repository.</p>
     <p>Categories:</p>
     <ul>
-      <li>Headphone virtualization with the Convolver (HeSuVi-derived, EFOtech MLV, synthetic crossfeed and binaural room, MIT KEMAR, ARI and IRCAM LISTEN HRTFs, and synthesized-renderer kernels: FLORA, ORCHARD, AQUILA, DELTA, LibreAtmos, LibreHolo, LibreSpatial, LibreDecibel, RICE)</li>
+      <li>Headphone virtualization with the Convolver (HeSuVi-derived, EFOtech MLV, synthetic crossfeed and binaural room, MIT KEMAR, ARI, IRCAM LISTEN, TH Köln KU100 and FABIAN HRTFs, a WDR control-room BRIR, and synthesized-renderer kernels: FLORA, ORCHARD, AQUILA, DELTA, LibreAtmos, LibreHolo, LibreSpatial, LibreDecibel, RICE)</li>
       <li>Dynamics (GentleDynamics)</li>
       <li>Laptop speakers and immersive listening</li>
       <li>Utility and effects (night listening, loudness leveling, mono sum, reference transparency, and others)</li>

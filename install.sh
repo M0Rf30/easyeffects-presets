@@ -211,6 +211,12 @@ libredecibel|LibreDecibel.json
 libredecibel|irs/LibreDecibel (True Stereo, 48kHz).irs
 rice|RICE Spatial.json
 rice|irs/RICE Spatial (True Stereo, 48kHz).irs
+measured|TH Koeln KU100 HRTF.json
+measured|irs/TH Koeln KU100 HRTF (True Stereo, 48kHz).irs
+measured|FABIAN HRTF (TU Berlin).json
+measured|irs/FABIAN HRTF (HATO 0, True Stereo, 48kHz).irs
+measured|WDR Control Room BRIR (KU100).json
+measured|irs/WDR Control Room 1 BRIR (KU100, True Stereo, 48kHz).irs
 input|input/Voice Noise Suppression.json
 input|input/Voice Broadcast.json
 # END MANIFEST
@@ -222,7 +228,7 @@ MANIFEST_EOF
 MENU_GROUPS=(
     all hesuvi crossfeed efotech kemar ari gentledynamics aurora cupertino
     ircam utility binaural libreatmos flora orchard aquila delta libreholo
-    librespatial libredecibel rice input uninstall
+    librespatial libredecibel rice measured input uninstall
 )
 MENU_LABELS=(
     "Install all presets (output and input)"
@@ -246,6 +252,7 @@ MENU_LABELS=(
     "Install LibreSpatial preset"
     "Install LibreDecibel preset"
     "Install RICE Spatial preset"
+    "Install measured HRTF/BRIR presets (TH Koeln KU100, FABIAN, WDR Control Room)"
     "Install microphone (input) presets (Voice Noise Suppression, Voice Broadcast)"
     "Uninstall all presets installed by this script"
 )

@@ -27,9 +27,9 @@ root/*.json (preset)  --kernel-name-->  irs/<name>.irs | irs/<name>.sofa  (binar
 
 | Path | Purpose |
 |---|---|
-| `/*.json` | 102 output preset files, one pipeline definition each. Root-level only. |
+| `/*.json` | 105 output preset files, one pipeline definition each. Root-level only. |
 | `input/` | 2 microphone (`"input"` pipeline) presets: Voice Noise Suppression, Voice Broadcast. Installed to `<data>/input/`. |
-| `irs/` | 89 binary impulse-response/HRTF files (`.irs` WAVE, `.sofa` HDF5), each referenced by a preset via `kernel-name`. |
+| `irs/` | 92 binary impulse-response/HRTF files (`.irs` WAVE, `.sofa` HDF5), each referenced by a preset via `kernel-name`. |
 | `scripts/` | `validate-presets.sh` (QA suite), `easyeffects-schema.json` + `update-schema.py` (vendored schema table), `generate-synthetic-crossfeed.js` and `generate-synthetic-binaural-room.js` (the two programmatically generated kernels). |
 | `.github/workflows/` | Single CI workflow with `lint`, `validate`, `generators` jobs. |
 | `install.sh` | End-user installer (bash) with an embedded manifest. |
@@ -85,7 +85,7 @@ There is no build step, no lint config, and no package manager (no `package.json
 
 **Adding or renaming a preset** (the validator enforces the last two items):
 1. The preset `.json` (+ its `.irs`/`.sofa` in `irs/` if convolver-based; root for output presets, `input/` for microphone presets).
-2. `install.sh` manifest (between `# BEGIN MANIFEST` and `# END MANIFEST`): one `group|path` line per file (paths literal, not URL-encoded; root `.json` → `output/`, `input/*` and `irs/*` keep their directory). A new menu entry additionally needs a `MENU_GROUPS`/`MENU_LABELS` pair (menu: 1 all, 2-21 output groups, 22 `input`, 23 `uninstall`).
+2. `install.sh` manifest (between `# BEGIN MANIFEST` and `# END MANIFEST`): one `group|path` line per file (paths literal, not URL-encoded; root `.json` → `output/`, `input/*` and `irs/*` keep their directory). A new menu entry additionally needs a `MENU_GROUPS`/`MENU_LABELS` pair (menu: 1 all, 2-22 output groups, 23 `input`, 24 `uninstall`).
 3. `README.md`: an entry with provenance/citation, containing the preset basename literally; update the Installation table and counts if a group changed.
 4. `THIRD-PARTY-NOTICES.md` if the asset is third-party; the README `Impulse Responses` inventory if a kernel was added.
 5. `scripts/validate-presets.sh` needs no changes — it discovers presets/kernels dynamically. Run it before committing.

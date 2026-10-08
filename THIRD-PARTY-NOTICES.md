@@ -34,6 +34,23 @@ The repository's own files (original presets, scripts and the synthetic kernels)
 - Attribution required: cite Bill Gardner and Keith Martin, MIT Media Lab, "HRTF measurements of a KEMAR dummy-head microphone" (1994/1995).
 - Caveats: the SOFA conversion bundled here was not traced to a specific converter or redistribution (the file's own metadata was not inspected for a license); the MIT terms above are for the original data only. Unverified: whether the SOFA conversion adds terms.
 
+## TH Köln KU100 HRTF and WDR Control Room BRIR
+
+- Files: `irs/TH Koeln KU100 HRTF (True Stereo, 48kHz).irs`, `irs/WDR Control Room 1 BRIR (KU100, True Stereo, 48kHz).irs`
+- Sources: https://sofacoustics.org/data/database/thk/HRIR_CIRC360.sofa (Neumann KU100, anechoic, 1° horizontal grid) and https://sofacoustics.org/data/database/thk/BRIR_CR1_KU_ROTM_L.sofa + `BRIR_CR1_KU_ROTM_R.sofa` (KU100 in WDR Control Room 1). Technische Hochschule Köln (Benjamin Bernschütz). BRIR reference: P. Stade, B. Bernschütz, M. Rühl (2012), "A Spatial Audio Impulse Response Compilation Captured at the WDR Broadcast Studios".
+- License: Creative Commons Attribution-ShareAlike 3.0 (each file's own `License` attribute reads "CC 3.0 BY-SA").
+- Attribution required: credit TH Köln (Bernschütz) and, for the BRIR, the WDR compilation paper above, and indicate changes.
+- Changes: picked the measurements at azimuth +30° / 330° (HRIR) or the left/right speaker with the head at 0° (BRIR), packed them as 4-channel true stereo (LL, LR, RL, RR), trimmed leading silence and the tail below −80 dB (with a short fade), and scaled the kernel to 0 dB mono gain over 200 Hz–4 kHz. These kernels are adaptations, so ShareAlike applies to them: they are distributed under CC BY-SA 3.0.
+
+## FABIAN HRTF (TU Berlin)
+
+- File: `irs/FABIAN HRTF (HATO 0, True Stereo, 48kHz).irs`
+- Source: https://sofacoustics.org/data/database/tu-berlin/FABIAN_HRIR_measured_HATO_0.sofa (Audio Communication Group, TU Berlin)
+- License: Creative Commons Attribution 4.0 (the file's own `License` attribute).
+- Attribution required: cite F. Brinkmann et al. (2017), "A High Resolution and Full-Spherical Head-Related Transfer Function Database for Different Head-Above-Torso Orientations", J. Audio Eng. Soc. 65(10):841–848, doi:10.17743/jaes.2017.0033, and indicate changes.
+- Changes: the measurements at azimuth +30° and 330° (elevation 0°) were packed as 4-channel true stereo, resampled from 44.1 kHz to 48 kHz (polyphase, 160/147), trimmed and level-scaled as above.
+- Caveats: per the file's metadata, frequencies below 200 Hz are numerically modelled, not measured.
+
 ## HeSuVi kernels
 
 - Files: all `irs/HeSuVi *.irs` (41 kernels)

@@ -52,6 +52,10 @@ Original pure-DSP presets built entirely from EasyEffects' built-in plugins (no 
 - **MIT KEMAR HRTF (SOFA)** — the [MIT KEMAR](http://sound.media.mit.edu/resources/KEMAR.html) measured HRTF (Gardner & Martin, 1995), loaded as `.sofa` with no conversion.
 - **ARI HRTF (SOFA)** — a measured DTF HRTF of subject NH2 from the [Acoustics Research Institute](https://sofacoustics.org/data/database/ari/dtf_nh2.sofa) (CC BY-SA 3.0); a flatter alternative to MIT KEMAR.
 - **IRCAM LISTEN HRTF (Subject 1002)** — the [IRCAM LISTEN](http://recherche.ircam.fr/equipes/salles/listen/) measured HRTF (subject IRC_1002; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for terms), delivered as a 4-channel true-stereo `.irs` derived from HeSuVi's `irc02` kernel (front L/R pair, head-symmetric). Unlike the SOFA presets it convolves a fixed frontal image (no live azimuth/elevation), but it loads directly without libmysofa.
+- **Measured HRTF/BRIR pack** (3 presets) — 4-channel true-stereo `.irs` kernels built here from published SOFA datasets: the measurements at ±30° azimuth, 0° elevation (a standard stereo speaker pair), leading silence and the tail below −80 dB trimmed, scaled to 0 dB mono gain over 200 Hz–4 kHz (autogain off). Picked to avoid overlap with the heads already here (MIT KEMAR, ARI NH2, IRCAM 1002). Unlike the SOFA presets, these include the crossfeed from each speaker to the opposite ear.
+  - **TH Koeln KU100 HRTF** — Neumann KU100 dummy head, anechoic, from the [TH Köln](https://sofacoustics.org/data/database/thk/) `HRIR_CIRC360` set (1° horizontal grid, 48 kHz, 128 taps; Bernschütz, CC BY-SA 3.0). The common reference head for binaural production.
+  - **FABIAN HRTF (TU Berlin)** — the FABIAN head-and-torso simulator, anechoic, from [`FABIAN_HRIR_measured_HATO_0`](https://sofacoustics.org/data/database/tu-berlin/) (head straight ahead; Brinkmann et al., JAES 2017, CC BY 4.0). Resampled here from 44.1 kHz to 48 kHz (polyphase, 160/147). Below 200 Hz the dataset uses modelled data (per the file's metadata).
+  - **WDR Control Room BRIR (KU100)** — a KU100 in WDR Control Room 1, Cologne (the [TH Köln](https://sofacoustics.org/data/database/thk/) `BRIR_CR1_KU_ROTM_L`/`_R` sets, head at 0°; Stade, Bernschütz & Rühl 2012, CC BY-SA 3.0). A measured real room, not anechoic: about 0.27 s of reverb tail after trimming. The two speakers are within 0.6 dB of each other in level.
 - **Synthesized renderers** — the families below are convolver → limiter chains whose kernels were synthesized here by system identification: a headphone virtualization engine was driven with test signals at 48 kHz and a linear 4-channel true-stereo (or 2-channel) kernel was fitted to its output. They are linear snapshots of adaptive or level-dependent processing, so they match the original only near the measured operating point. The names describe what each family sets out to reproduce; the measured responses and their redistribution terms are discussed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). No head tracking.
   - **FLORA** (Free/Libre Object Reality Audio) — an object-based spatial audio upmix: Cinema room (spacious, reverberant) and Music room (tighter, more natural). Presets: FLORA Cinema, FLORA Music.
   - **ORCHARD** — a "spatialize stereo" headphone engine. The default presets include its virtual room; the `Dry` variants are binaural only. General is music/everyday, Game is positional, Movie has a wider stage. The `Upmix` variants follow the route that first upmixes stereo to surround; that upmix adapts to content, so they are a snapshot for typical music. Presets: ORCHARD General, ORCHARD General Dry, ORCHARD Game, ORCHARD Game Dry, ORCHARD Movie, ORCHARD Movie Dry, ORCHARD General Upmix, ORCHARD Movie Upmix.
@@ -66,7 +70,7 @@ Original pure-DSP presets built entirely from EasyEffects' built-in plugins (no 
 The SOFA presets convolve the whole mix as one virtual source — change azimuth/elevation live in the Convolver's SOFA controls.
 
 ### Microphone (input)
-Installed to `<easyeffects data>/input/` (menu entry 22). Both start with an 80 Hz high-pass and RNNoise and end with a −1 dB limiter.
+Installed to `<easyeffects data>/input/` (menu entry 23). Both start with an 80 Hz high-pass and RNNoise and end with a −1 dB limiter.
 - **Voice Noise Suppression** — filter (HPF 80 Hz) → rnnoise → gate (−12 dB threshold, 250 ms release) → limiter (−1 dB).
 - **Voice Broadcast** — filter (HPF 80 Hz) → rnnoise → de-esser (3:1) → compressor (3:1, −20 dB threshold, +3 dB makeup) → equalizer (−1.5 dB @ 250 Hz, +2 dB @ 3.5 kHz, +1 dB shelf @ 10 kHz) → limiter (−1 dB). Heuristic voicing, not derived from measurements.
 
@@ -78,6 +82,7 @@ Installed to `<easyeffects data>/input/` (menu entry 22). Both start with an 80 
 - **EFOtech MLV** (6 `.irs`) — EFOtech-derived true-stereo crossfeed IRs.
 - **Synthesized renderers** (36 `.irs`) — FLORA (2), ORCHARD (8), AQUILA (5), DELTA (3), LibreAtmos profiles (12), LibreSpatial, LibreHolo (3), LibreDecibel, RICE Spatial; see THIRD-PARTY-NOTICES.md.
 - **IRCAM LISTEN** (1 `.irs`) — Subject 1002, derived from HeSuVi's `irc02`.
+- **Measured HRTF/BRIR pack** (3 `.irs`) — TH Koeln KU100, FABIAN (HATO 0) and WDR Control Room 1 BRIR, true-stereo kernels built from SOFA datasets (see above).
 - **Synthetic Spherical-Head Crossfeed** and **Synthetic Binaural Room** (2 `.irs`) — generated by `scripts/generate-synthetic-crossfeed.js` and `scripts/generate-synthetic-binaural-room.js`.
 - **LibreAtmos** (1 `.irs`) — short 2-channel coloration IR, unverified provenance.
 - **MIT KEMAR** and **ARI NH2** (2 `.sofa`) — measured HRTFs, loaded without conversion.
@@ -119,8 +124,9 @@ Press Enter for the default. The on-screen menu (`install.sh --help`) is authori
 | 19 | `librespatial` | LibreSpatial |
 | 20 | `libredecibel` | LibreDecibel |
 | 21 | `rice` | RICE Spatial |
-| 22 | `input` | Microphone (input) presets (2 presets) |
-| 23 | `uninstall` | Remove everything listed in the installer manifest |
+| 22 | `measured` | Measured HRTF/BRIR pack (3 presets: TH Koeln KU100, FABIAN, WDR Control Room) |
+| 23 | `input` | Microphone (input) presets (2 presets) |
+| 24 | `uninstall` | Remove everything listed in the installer manifest |
 
 `curl` is required (`sudo apt install curl` on Ubuntu).
 

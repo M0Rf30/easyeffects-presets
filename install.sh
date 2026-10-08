@@ -139,10 +139,78 @@ binaural|Synthetic Binaural Room.json
 binaural|irs/Synthetic Binaural Room (Structural HRTF, 48kHz).irs
 libreatmos|LibreAtmos.json
 libreatmos|irs/LibreAtmos (Stereo, 48kHz).irs
+libreatmos|LibreAtmos Dynamic.json
+libreatmos|irs/LibreAtmos Dynamic (True Stereo, 48kHz).irs
+libreatmos|LibreAtmos Dynamic + Spatial.json
+libreatmos|irs/LibreAtmos Dynamic + Spatial (True Stereo, 48kHz).irs
+libreatmos|LibreAtmos Game.json
+libreatmos|irs/LibreAtmos Game (True Stereo, 48kHz).irs
+libreatmos|LibreAtmos Game + Spatial.json
+libreatmos|irs/LibreAtmos Game + Spatial (True Stereo, 48kHz).irs
+libreatmos|LibreAtmos Default.json
+libreatmos|irs/LibreAtmos Default (True Stereo, 48kHz).irs
+libreatmos|LibreAtmos Default + Spatial.json
+libreatmos|irs/LibreAtmos Default + Spatial (True Stereo, 48kHz).irs
+libreatmos|LibreAtmos On The Go.json
+libreatmos|irs/LibreAtmos On The Go (True Stereo, 48kHz).irs
+libreatmos|LibreAtmos On The Go + Spatial.json
+libreatmos|irs/LibreAtmos On The Go + Spatial (True Stereo, 48kHz).irs
+libreatmos|LibreAtmos Movie.json
+libreatmos|irs/LibreAtmos Movie (True Stereo, 48kHz).irs
+libreatmos|LibreAtmos Movie + Spatial.json
+libreatmos|irs/LibreAtmos Movie + Spatial (True Stereo, 48kHz).irs
+libreatmos|LibreAtmos Music.json
+libreatmos|irs/LibreAtmos Music (Stereo, 48kHz).irs
+libreatmos|LibreAtmos Music + Spatial.json
+libreatmos|irs/LibreAtmos Music + Spatial (Stereo, 48kHz).irs
 flora|FLORA Cinema.json
 flora|irs/FLORA Cinema (True Stereo, 48kHz).irs
 flora|FLORA Music.json
 flora|irs/FLORA Music (True Stereo, 48kHz).irs
+orchard|ORCHARD Game Dry.json
+orchard|irs/ORCHARD Game Dry (True Stereo, 48kHz).irs
+orchard|ORCHARD Game.json
+orchard|irs/ORCHARD Game (True Stereo, 48kHz).irs
+orchard|ORCHARD General Dry.json
+orchard|irs/ORCHARD General Dry (True Stereo, 48kHz).irs
+orchard|ORCHARD General.json
+orchard|irs/ORCHARD General (True Stereo, 48kHz).irs
+orchard|ORCHARD Movie Dry.json
+orchard|irs/ORCHARD Movie Dry (True Stereo, 48kHz).irs
+orchard|ORCHARD Movie.json
+orchard|irs/ORCHARD Movie (True Stereo, 48kHz).irs
+orchard|ORCHARD General Upmix.json
+orchard|irs/ORCHARD General Upmix (True Stereo, 48kHz).irs
+orchard|ORCHARD Movie Upmix.json
+orchard|irs/ORCHARD Movie Upmix (True Stereo, 48kHz).irs
+aquila|AQUILA Default.json
+aquila|irs/AQUILA Default (True Stereo, 48kHz).irs
+aquila|AQUILA Game 1.json
+aquila|irs/AQUILA Game 1 (True Stereo, 48kHz).irs
+aquila|AQUILA Game 2.json
+aquila|irs/AQUILA Game 2 (True Stereo, 48kHz).irs
+aquila|AQUILA Movie.json
+aquila|irs/AQUILA Movie (True Stereo, 48kHz).irs
+aquila|AQUILA Music.json
+aquila|irs/AQUILA Music (True Stereo, 48kHz).irs
+delta|DELTA HD Earbud.json
+delta|irs/DELTA HD Earbud (Stereo, 48kHz).irs
+delta|DELTA Surround.json
+delta|irs/DELTA Surround (True Stereo, 48kHz).irs
+delta|DELTA Crossfeed.json
+delta|irs/DELTA Crossfeed (True Stereo, 48kHz).irs
+libreholo|LibreHolo Movie.json
+libreholo|irs/LibreHolo Movie (True Stereo, 48kHz).irs
+libreholo|LibreHolo Movie Quiet.json
+libreholo|irs/LibreHolo Movie Quiet (True Stereo, 48kHz).irs
+libreholo|LibreHolo Music.json
+libreholo|irs/LibreHolo Music (True Stereo, 48kHz).irs
+librespatial|LibreSpatial.json
+librespatial|irs/LibreSpatial (Stereo, 48kHz).irs
+libredecibel|LibreDecibel.json
+libredecibel|irs/LibreDecibel (True Stereo, 48kHz).irs
+rice|RICE Spatial.json
+rice|irs/RICE Spatial (True Stereo, 48kHz).irs
 input|input/Voice Noise Suppression.json
 input|input/Voice Broadcast.json
 # END MANIFEST
@@ -153,7 +221,8 @@ MANIFEST_EOF
 # manifest entry, "uninstall" removes them, anything else is a manifest group.
 MENU_GROUPS=(
     all hesuvi crossfeed efotech kemar ari gentledynamics aurora cupertino
-    ircam utility binaural libreatmos flora input uninstall
+    ircam utility binaural libreatmos flora orchard aquila delta libreholo
+    librespatial libredecibel rice input uninstall
 )
 MENU_LABELS=(
     "Install all presets (output and input)"
@@ -168,8 +237,15 @@ MENU_LABELS=(
     "Install IRCAM LISTEN HRTF (Subject 1002) preset"
     "Install all Utility & Effects presets (Night Listening, Levelizer, Mono Sum, Tiny Speaker Rescue, Analog Warmth, Concert Hall, Movie Dialogue Boost, Reference Transparency)"
     "Install Synthetic Binaural Room preset"
-    "Install LibreAtmos preset"
+    "Install all LibreAtmos presets (LibreAtmos + 12 profile variants)"
     "Install FLORA presets (Cinema/Music)"
+    "Install all ORCHARD presets (8 presets)"
+    "Install all AQUILA presets (5 presets)"
+    "Install all DELTA presets (HD Earbud, Surround, Crossfeed)"
+    "Install all LibreHolo presets (Movie, Movie Quiet, Music)"
+    "Install LibreSpatial preset"
+    "Install LibreDecibel preset"
+    "Install RICE Spatial preset"
     "Install microphone (input) presets (Voice Noise Suppression, Voice Broadcast)"
     "Uninstall all presets installed by this script"
 )

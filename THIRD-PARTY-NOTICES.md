@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-The repository's own files (original presets, scripts, the synthetic and FLORA kernels) are under the MIT license in `LICENSE`. The assets below are bundled from other sources and are **not** all MIT. Where a license could not be verified, that is stated rather than assumed. Checked 2026-10-07.
+The repository's own files (original presets, scripts and the synthetic kernels) are under the MIT license in `LICENSE`. The assets below are bundled from other sources and are **not** all MIT. Where a license could not be verified, that is stated rather than assumed. Checked 2026-10-07.
 
 ## GentleDynamics presets
 
@@ -63,15 +63,30 @@ The repository's own files (original presets, scripts, the synthetic and FLORA k
 ## LibreAtmos kernel
 
 - File: `irs/LibreAtmos (Stereo, 48kHz).irs`
-- Source: unknown. The README states that the provenance of this kernel is unverified.
+- Source: unknown. Its right channel matches the measured response of an object-audio headphone chain (Music profile; normalized correlation 0.998); see the next section.
 - License: unknown.
 - Caveats: the EQ/dynamics part of the preset is hand-tuned in this repository; the kernel is the unverified part. Remove it if provenance cannot be established.
 
-## FLORA kernels
+## Synthesized renderer kernels
 
-- Files: `irs/FLORA Cinema (True Stereo, 48kHz).irs`, `irs/FLORA Music (True Stereo, 48kHz).irs`, and the FLORA presets
-- Source: self-authored in this repository; not derived from a published dataset or measurement corpus.
-- License: MIT (repository `LICENSE`).
+These kernels were synthesized in this repository by system identification: a headphone virtualization engine was driven with test signals at 48 kHz and a linear true-stereo (or stereo) kernel was fitted to its output. They are linear, time-invariant snapshots of non-linear, adaptive and/or level-dependent processing, so they approximate the original only at the measured operating point. The fitting and packaging are original work; the measured responses belong to the respective engine vendors, whose terms for redistributing such measurements have not been verified. The preset names are descriptive and are not endorsed by any vendor; all trademarks belong to their owners.
+
+The families and their kernels:
+
+| Family | Kernels (`irs/`) |
+|---|---|
+| FLORA (Free/Libre Object Reality Audio) | `FLORA Cinema`, `FLORA Music` — an object-based spatial audio upmix, Cinema and Music rooms |
+| ORCHARD | 8 — a "spatialize stereo" engine, Game / General / Movie, dry and with room, plus the stereo-upmix route |
+| AQUILA (Latin for eagle) | 5 — a headphone virtualizer, Default, Game 1, Game 2, Movie, Music |
+| DELTA (after the Dirac delta) | `DELTA HD Earbud`, `DELTA Surround`, `DELTA Crossfeed` — earbud correction, movie-mode virtualizer, headset crossfeed (the last built from extracted data and not checked against the running engine) |
+| LibreAtmos profiles | 12 — object-audio headphone profiles (Dynamic, Game, Default, On The Go, Movie, Music), alone and chained with a spatial-sound filter |
+| LibreSpatial | 1 — a spatial-sound headphone filter on its own |
+| LibreHolo | 3 — a holographic spatial-audio engine (Movie, Movie Quiet at ≤ −30 dBFS, Music) |
+| LibreDecibel | 1 — a spatializer that places stereo as front speakers in a virtual room |
+| RICE Spatial | 1 — spatial audio for headphones, stereo input |
+
+- License: unknown for the measured responses (see above). The preset JSON files are MIT.
+- Caveats: remove a kernel if a vendor objects or its redistribution terms turn out to forbid it.
 
 ## Synthetic kernels
 
@@ -88,5 +103,6 @@ Aurora Immersive, Cupertino Laptop Speakers, the Utility & Effects presets, the 
 - Redistribution rights for the HeSuVi-derived kernels (and thus the IRCAM `.irs` derived from HeSuVi).
 - IRCAM LISTEN current terms from IRCAM itself.
 - Origin and license of the LibreAtmos kernel.
+- Redistribution terms for the synthesized-renderer kernels (FLORA, ORCHARD, AQUILA, DELTA, LibreAtmos profiles, LibreSpatial, LibreHolo, LibreDecibel, RICE).
 - Origin of the bundled MIT KEMAR `.sofa` conversion.
 - "GPL-3.0-or-later" vs "GPL-3.0-only" for GentleDynamics.

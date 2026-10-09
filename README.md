@@ -18,6 +18,11 @@ Vendored from [droidwayin/GentleDynamics](https://github.com/droidwayin/GentleDy
 ### Laptop speakers
 - **Cupertino Laptop Speakers** — an original, from-scratch pure-DSP loudness + clarity chain (high-pass driver protection → EQ boxiness-cut & presence/air lift → psychoacoustic bass enhancer → 8-band multiband compressor → high-frequency exciter → stereo widening → brickwall limiter) hand-tuned to make built-in laptop speakers sound big, loud and refined, inspired by the tuning philosophy of MacBook speakers. Not derived from any measurement dataset — it's a heuristic engineering voicing. Aggressive and speaker-specific (not for headphones); start a few dB below your usual volume.
 
+### Headphone correction (EQ)
+Equalizer → limiter (−1 dB) chains that correct one specific headphone model toward a Harman-family target, softened slightly for relaxed, non-fatiguing listening. The bands are fitted to published measurements, simulated as 48 kHz RBJ biquads, and cross-checked against the existing [AutoEq](https://github.com/jaakkopasanen/AutoEq) parametric EQs. The equalizer `input-gain` is set to cover the largest boost, so these presets play quieter than bypass; match levels before comparing. Bass varies with seal or tips, and anything above ~8 kHz varies between units, so treat these as a starting point to adjust by ear. Menu entry 23.
+- **Austrian Audio Hi-X15** — 6 bells for the closed-back Hi-X15, fitted to the only public measurement found: [oratory1990's raw measurement](https://github.com/jaakkopasanen/AutoEq/blob/master/measurements/oratory1990/data/over-ear/Austrian%20Audio%20Hi-X15.csv) of one unit, as carried in AutoEq. No Rtings, crinacle or ASR data exists for it. The target is Harman over-ear 2018, set 1–1.5 dB lower at 3 and 6 kHz to follow reviewers who call the treble forward or aggressive (Sound On Sound, MusicTech, headphonecheck). The bells cut the 90 Hz hump and the 3 kHz and 6 kHz peaks, restore the thin 300–500 Hz range, and partly fill the 1.8 kHz dip. The 1.8 kHz fill is less than oratory1990's EQ applies, and the residual error is 1.5 dB RMS over 20 Hz–10 kHz, down from 3.5 dB. Preamp −5.5 dB. If your pads seal poorly and the bass sounds thin, reduce the 90 Hz cut to about −4 dB.
+- **KZ ZS10 Pro** — 7 bands for the original ZS10 Pro (1 DD + 4 BA). The Pro X, Pro 2 and plain ZS10 have different tunings, so it doesn't apply to them. It is fitted to the average of seven clone IEC 711 squig.link measurements: Super Review, Harpo, kr0mka, Precogvision, Acho Reviews, Timmy V and eplv. No oratory1990, crinacle or Rtings measurement of this model exists. The target is Harman in-ear 2019 with about +1 dB of sub-bass and a smoother 3–10 kHz. The bands are a gentle low shelf, broad cuts at 180 Hz, 2.15 kHz, 4.6 kHz and 8.5 kHz (the 8 kHz peak shows up in every measurement), and lifts at 740 Hz and 3.2 kHz. Unlike the AutoEq PEQs it doesn't fill the 6 kHz dip with a high-Q boost, because that dip moves with insertion depth. The residual error against the softened target is 1.0 dB RMS, down from 2.3 dB. Preamp −2 dB.
+
 ### Utility & Effects
 Original pure-DSP presets built entirely from EasyEffects' built-in plugins (no IR assets); parameters follow the EasyEffects 8.2.7 plugin schema. Each is a heuristic engineering voicing, not derived from a measurement dataset, and each deliberately exercises plugins the rest of the collection doesn't use.
 - **Night Listening** — `loudness` (ISO 226-2023 equal-loudness contour) → multiband compressor → limiter, so bass and treble stay perceptually balanced at low late-night volume. Set the Loudness *volume* control to your actual listening level.
@@ -70,7 +75,7 @@ Original pure-DSP presets built entirely from EasyEffects' built-in plugins (no 
 The SOFA presets convolve the whole mix as one virtual source — change azimuth/elevation live in the Convolver's SOFA controls.
 
 ### Microphone (input)
-Installed to `<easyeffects data>/input/` (menu entry 23). Both start with an 80 Hz high-pass and RNNoise and end with a −1 dB limiter.
+Installed to `<easyeffects data>/input/` (menu entry 24). Both start with an 80 Hz high-pass and RNNoise and end with a −1 dB limiter.
 - **Voice Noise Suppression** — filter (HPF 80 Hz) → rnnoise → gate (−12 dB threshold, 250 ms release) → limiter (−1 dB).
 - **Voice Broadcast** — filter (HPF 80 Hz) → rnnoise → de-esser (3:1) → compressor (3:1, −20 dB threshold, +3 dB makeup) → equalizer (−1.5 dB @ 250 Hz, +2 dB @ 3.5 kHz, +1 dB shelf @ 10 kHz) → limiter (−1 dB). Heuristic voicing, not derived from measurements.
 
@@ -125,8 +130,9 @@ Press Enter for the default. The on-screen menu (`install.sh --help`) is authori
 | 20 | `libredecibel` | LibreDecibel |
 | 21 | `rice` | RICE Spatial |
 | 22 | `measured` | Measured HRTF/BRIR pack (3 presets: TH Koeln KU100, FABIAN, WDR Control Room) |
-| 23 | `input` | Microphone (input) presets (2 presets) |
-| 24 | `uninstall` | Remove everything listed in the installer manifest |
+| 23 | `headphone-eq` | Headphone EQ presets (2 presets: Austrian Audio Hi-X15, KZ ZS10 Pro) |
+| 24 | `input` | Microphone (input) presets (2 presets) |
+| 25 | `uninstall` | Remove everything listed in the installer manifest |
 
 `curl` is required (`sudo apt install curl` on Ubuntu).
 
